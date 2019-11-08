@@ -108,7 +108,7 @@ for iE = 1:height(G.Edges)
             % connect to each end node, weight (length equivalent) = 5
             sNode = G.Edges.EndNodes{iE,1};
             tNode = G.Edges.EndNodes{iE,2};
-            EdgeProps = table({' '},{"new"},5,...
+            EdgeProps = table({' '},{'new'},5,...
                 'VariableNames',{'Name','Type','Weight'});
             Gt = addedge(Gt,sNode,G.Edges.Name{iE},EdgeProps);
             Gt = addedge(Gt,G.Edges.Name{iE},tNode,EdgeProps);            
@@ -126,18 +126,72 @@ end
 %   regulator: convert to node
 %   triplex_line:
 
+edgeAddS = {};
+edgeAddT = {};
+edgeAddName = {};
+edgeAddType = {};
+edgeAddWeight = [];
+removeNodeList = {};
 for iN = 1:height(Gt.Nodes)
+    % meter type
     if strcmpi(Gt.Nodes.Type(iN),'meter')
-        
+        % remove all meters
+        if (indegree(Gt,iN)==1)&&(outdegree(Gt,iN)==1)
+            edgeAddS{end+1} = Gt.Nodes.Name(predecessors(Gt,iN));
+            edgeAddT{end+1} = Gt.Nodes.Name(successors(Gt,iN));
+            edgeAddName{end+1} = ' ';
+            edgeAddType{end+1} = 'meter';
+            edgeAddWeight(end+1) = 5;
+            removeNodeList{end+1} = Gt.Nodes.Name{iN};
+        else
+            warning(['Unexpected degree for meter node ',num2str(iN)]);
+        end
+    end
+    % node type
+    if strcmpi(Gt.Nodes.Type(iN),'node')
+        % remove node nodes at the end of a line
+        if (indegree(Gt,iN)==0)||(outdegree(Gt,iN)==0)
+            removeNodeList{end+1} = Gt.Nodes.Name{iN};
+        end
+        % if between two nodes
+        if (indegree(Gt,iN)==1)&&(outdegree(Gt,iN)==1)
+            % remove if one edge is from the previous simplification
+            if strcmpi(Gt.Edges.Type{inedges(Gt,iN)},'new')
+                edgeAddS{end+1} = Gt.Nodes.Name(predecessors(Gt,iN));
+                edgeAddT{end+1} = Gt.Nodes.Name(successors(Gt,iN));
+                edgeAddName{end+1} = ' ';
+                edgeAddType{end+1} = Gt.Edges.Type{outedges(Gt,iN)};
+                edgeAddWeight(end+1) = 5;
+                removeNodeList{end+1} = Gt.Nodes.Name{iN};
+            elseif strcmpi(Gt.Edges.Type{outedges(Gt,iN)},'new')
+                edgeAddS{end+1} = Gt.Nodes.Name(predecessors(Gt,iN));
+                edgeAddT{end+1} = Gt.Nodes.Name(successors(Gt,iN));
+                edgeAddName{end+1} = ' ';
+                edgeAddType{end+1} = Gt.Edges.Type{inedges(Gt,iN)};
+                edgeAddWeight(end+1) = 5;
+                removeNodeList{end+1} = Gt.Nodes.Name{iN};
+            end
+        end
     end
     
+    
+    
 end
+% add edges
+for i = 1:size(edgeAddS,2)
+    EdgeProps = table(edgeAddName(i),edgeAddType(i),edgeAddWeight(i),...
+        'VariableNames',{'Name','Type','Weight'});
+    Gt = addedge(Gt,edgeAddS{i},edgeAddT{i},EdgeProps);
+end
+% remove nodes (keep after adding edges)
+Gt = rmnode(Gt,removeNodeList);
 
-
+% ** node 'reg-1' is all alone!
 
 
 %p = plot(Gt,'NodeLabel',Gt.Nodes.Name,'EdgeLabel',Gt.Edges.Name);
 
+figure(2)
 p = plot(Gt,'Layout','force','NodeLabel',Gt.Nodes.Name,...
     'EdgeLabel',Gt.Edges.Name);
 
