@@ -1,6 +1,7 @@
 % translateG
 % take the results from convertGLM / glm2net and translate
 
+addpath([pwd,'\results\'])
 % test case
 load('R1-12.47-3.mat')
 
@@ -198,6 +199,9 @@ p = plot(Gt,'Layout','force','NodeLabel',Gt.Nodes.Name,...
 %p = plot(Gt,'Layout','force','NodeLabel',Gt.Nodes.Name,...
 %    'EdgeLabel',Gt.Edges.Name,'WeightEffect','direct',...
 %    'UseGravity','on','Iterations',1);
+
+% tabel of pairs
+[t1,t2] = typePairs(Gt)
 
 
 
