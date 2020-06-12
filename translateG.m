@@ -11,10 +11,10 @@ addpath([pwd,'\results\'])
 % test case
 load('R1-12.47-3.mat')
 
-figure(1)
-p1 = plot(G,'Layout','force','NodeLabel',G.Nodes.Name,...
-    'EdgeLabel',G.Edges.Name);
-title('G (Initial)')
+%figure(1)
+%p1 = plot(G,'Layout','force','NodeLabel',G.Nodes.Name,...
+%    'EdgeLabel',G.Edges.Name);
+%title('G (Initial)')
 
 % remove model name from node (edge table automatically updated) and edge names
 % replace "_" from model names to make plotting cleaner
@@ -203,7 +203,7 @@ Gt = rmnode(Gt,removeNodeList);
 
 figure(2)
 %p2 = plot(Gt,'NodeLabel',Gt.Nodes.Name,'EdgeLabel',Gt.Edges.Name);
-p2 = plot(Gt,'Layout','force','NodeLabel',Gt.Nodes.Name,...
+p2 = plot(Gt,'Layout','auto','NodeLabel',Gt.Nodes.Name,...
     'EdgeLabel',Gt.Edges.Name);
 %p2 = plot(Gt,'Layout','direct','NodeLabel',Gt.Nodes.Name,...
 %    'EdgeLabel',Gt.Edges.Name,'WeightEffect','direct');
@@ -215,8 +215,9 @@ title('Gt (Translated)')
 % TROUBLESHOOT ONLY (not valid source node)
 Gt2 = redirectDigraph(Gt,18);
 figure(3)
-p3 = plot(Gt2,'Layout','force','NodeLabel',Gt2.Nodes.Name,...
+p3 = plot(Gt2,'Layout','auto','NodeLabel',Gt2.Nodes.Name,...
     'EdgeLabel',Gt2.Edges.Name);
+title('Gt (edges adjusted)')
 
 
 % tabel of pairs
