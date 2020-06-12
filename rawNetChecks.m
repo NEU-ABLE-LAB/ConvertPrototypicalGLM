@@ -36,7 +36,6 @@ for iFeeder = 1:numel(feederIDs)
     disp(feederID)
     disp(['Total nodes: ',num2str(numnodes(G))]);
     disp(['Connected components: ',num2str(max(conncomp(G,'Type','weak')))]);
-    
     disp(' ')
     
     
