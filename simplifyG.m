@@ -30,6 +30,7 @@ for iE = 1:height(G.Edges)
     G.Edges.Name{iE} = newName;
 end
 
+% TROUBLESHOOT: plot
 figure(1)
 p1 = plot(G,'Layout','layered','NodeLabel',G.Nodes.Name,...
     'EdgeLabel',G.Edges.Name);
@@ -78,7 +79,7 @@ for iN = 1:height(G.Nodes)
             if isfield(props,'constant_power_C')
                 powerNom = powerNom + str2num(props.constant_power_C);
             end
-            
+            powerNom = real(powerNom);
         case 'meter'
         
         case 'node'
@@ -155,7 +156,6 @@ for iE = 1:height(G.Edges)
 end
 
 %% IDENTIFY SOURCE NODE and adjust directed edges
-
 sourceID = find(Gt.Nodes.Type == 'source');
 if isempty(sourceID)
     error('no source node found')
@@ -164,15 +164,10 @@ elseif numel(sourceID)>1
 end
 Gt = redirectDigraph(Gt,sourceID);
 
+% TROUBLESHOOT: plot
 figure(2)
-%p2 = plot(Gt,'NodeLabel',Gt.Nodes.Name,'EdgeLabel',Gt.Edges.Name);
 p2 = plot(Gt,'Layout','layered','NodeLabel',Gt.Nodes.Name,...
     'EdgeLabel',Gt.Edges.Name);
-%p2 = plot(Gt,'Layout','direct','NodeLabel',Gt.Nodes.Name,...
-%    'EdgeLabel',Gt.Edges.Name,'WeightEffect','direct');
-%p2 = plot(Gt,'Layout','force','NodeLabel',Gt.Nodes.Name,...
-%    'EdgeLabel',Gt.Edges.Name,'WeightEffect','direct',...
-%    'UseGravity','on','Iterations',1);
 title('Gt (all edges, direction fixed)')
 
 %% REMOVE METERS
@@ -215,11 +210,11 @@ edgeAddWeight = [];
 removeNodeList = {};
 for iN = 1:height(Gt.Nodes)
     % node type
-    if strcmpi(Gt.Nodes.Type(iN),'node') || strcmpi(Gt.Nodes.Type(iN),'triplex_node')
+    if max(strcmpi(Gt.Nodes.Type(iN),{'node','triplex_node'}))
         % remove node nodes at the end of a line
-        if (indegree(Gt,iN)==0)||(outdegree(Gt,iN)==0)
-            removeNodeList{end+1} = Gt.Nodes.Name{iN};
-        end
+        %if (indegree(Gt,iN)==0)||(outdegree(Gt,iN)==0)
+        %    removeNodeList{end+1} = Gt.Nodes.Name{iN};
+        %end
         % if between two nodes
         if (indegree(Gt,iN)==1)&&(outdegree(Gt,iN)==1)
             % remove if one edge is from the previous simplification
@@ -250,20 +245,25 @@ end
 Gt = rmnode(Gt,removeNodeList);
 
 %% REMOVE TERMINAL NODES THAT ARE NOT LOADS
-disp('Initial end node types:')
-disp(unique(endTypes(Gt))')
+%disp('Initial end node types:')
+%disp(unique(endTypes(Gt))')
+removeTypes = {'node','triplex_node','switch','transformer','fuse'};
+loops = 0;
+while ~min(unique(endTypes(Gt))=="load") && loops < 100
+    loops = loops + 1;
+    removeNodeList = {};
+    for iN = 1:height(Gt.Nodes)
+        if outdegree(Gt,iN)==0 && max(strcmpi(Gt.Nodes.Type(iN),removeTypes))
+            removeNodeList{end+1} = Gt.Nodes.Name{iN};
+        end
+    end
+    Gt = rmnode(Gt,removeNodeList);
+end
 
-
-
+%% TROUBLESHOOT: plot
 figure(3)
-%p2 = plot(Gt,'NodeLabel',Gt.Nodes.Name,'EdgeLabel',Gt.Edges.Name);
 p3 = plot(Gt,'Layout','layered','NodeLabel',Gt.Nodes.Name,...
     'EdgeLabel',Gt.Edges.Name);
-%p2 = plot(Gt,'Layout','direct','NodeLabel',Gt.Nodes.Name,...
-%    'EdgeLabel',Gt.Edges.Name,'WeightEffect','direct');
-%p2 = plot(Gt,'Layout','force','NodeLabel',Gt.Nodes.Name,...
-%    'EdgeLabel',Gt.Edges.Name,'WeightEffect','direct',...
-%    'UseGravity','on','Iterations',1);
 title('Gt (translated and edges adjusted)')
 
 
