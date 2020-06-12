@@ -212,6 +212,8 @@ p2 = plot(Gt,'Layout','auto','NodeLabel',Gt.Nodes.Name,...
 %    'UseGravity','on','Iterations',1);
 title('Gt (Translated)')
 
+
+%% IDENTIFY SOURCE NODE and adjust directed edges
 % TROUBLESHOOT ONLY (not valid source node)
 Gt2 = redirectDigraph(Gt,18);
 figure(3)

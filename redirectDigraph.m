@@ -1,9 +1,9 @@
-function Gout = redirectDigraph(Gin,sourceID)
+function G = redirectDigraph(Gin,sourceID)
     % redirect all directed edges, with sourceID node as top of hierarchy
 
-    Gout = Gin;
-    Gout.Edges.Checked = zeros(height(Gout.Edges),1);
-    Gout.Nodes.Checked = zeros(height(Gout.Nodes),1);
+    G = Gin;
+    G.Edges.Checked = zeros(height(G.Edges),1);
+    G.Nodes.Checked = zeros(height(G.Nodes),1);
     
     nodeIDs = sourceID; % start with input source
         
@@ -14,56 +14,56 @@ function Gout = redirectDigraph(Gin,sourceID)
         for iN = 1:numel(nodeIDs)
             % for each node in nodeID list
             nodeID = nodeIDs(iN);
-            Gout.Nodes.Checked(nodeID) = 1;
+            G.Nodes.Checked(nodeID) = 1;
             % OUT EDGES
-            outEdges = outedges(Gout,nodeID);
+            outEdges = outedges(G,nodeID);
             for iE = 1:numel(outEdges)
                 edgeID = outEdges(iE);
                 % flag as Checked
-                Gout.Edges.Checked(edgeID) = 1;
+                G.Edges.Checked(edgeID) = 1;
                 % add nodes list for next iteration (unless already checked)
-                t = findnode(Gout,Gout.Edges.EndNodes{edgeID,2});
-                if Gout.Nodes.Checked(t) == 0
+                t = findnode(G,G.Edges.EndNodes{edgeID,2});
+                if G.Nodes.Checked(t) == 0
                     nextNodes(end+1) = t;
                 end
             end
             % IN EDGES
-            inEdges = inedges(Gout,nodeID);
+            inEdges = inedges(G,nodeID);
             flipList = [];
             % STEP 1: check, update and record
             for iE = 1:numel(inEdges)
                 edgeID = inEdges(iE);
-                if ~Gout.Edges.Checked(edgeID)
+                if ~G.Edges.Checked(edgeID)
                     % only flip if not already Checked
                     flipList(end+1) = edgeID;
-                    Gout.Edges.Checked(edgeID) = 1;
+                    G.Edges.Checked(edgeID) = 1;
                     % add nodes list for next iteration (unless already checked)
-                    s = findnode(Gout,Gout.Edges.EndNodes{edgeID,1});
-                    if Gout.Nodes.Checked(s) == 0
+                    s = findnode(G,G.Edges.EndNodes{edgeID,1});
+                    if G.Nodes.Checked(s) == 0
                         nextNodes(end+1) = s;
                     end
                 end
             end
             % STEP 2: flip edges
-            Gout = flipedge(Gout,flipList);
+            G = flipedge(G,flipList);
         end
     
         nodeIDs = nextNodes;
         
     end
     
-    if min(Gout.Edges.Checked(:)) == 0
+    if min(G.Edges.Checked(:)) == 0
         warning('Edges not checked:')
-        disp(Gout.Edges.EndNodes(find(~Gout.Edges.Checked),:))
+        disp(G.Edges.EndNodes(find(~G.Edges.Checked),:))
     end
-    if min(Gout.Nodes.Checked(:)) == 0
+    if min(G.Nodes.Checked(:)) == 0
         warning('Nodes not checked:')
-        disp(Gout.Nodes.Name(find(~Gout.Nodes.Checked)))
+        disp(G.Nodes.Name(find(~G.Nodes.Checked)))
     end
 
     % remove flag variables
-    Gout.Edges.Checked = [];
-    Gout.Nodes.Checked = [];
+    G.Edges.Checked = [];
+    G.Nodes.Checked = [];
     
     
 end
