@@ -10,8 +10,6 @@ addpath([pwd,'\results\'])
 % test case
 load('R1-12.47-3.mat')
 
-
-
 %% RENAME NODES AND EDGES
 % remove model name from node (edge table automatically updated) and edge names
 % replace "_" with "-" to make plotting cleaner
@@ -38,7 +36,7 @@ p1 = plot(G,'Layout','layered','NodeLabel',G.Nodes.Name,...
 title('G (Initial)')
 
 
-%% CONVERT NODES
+%% CONVERT NODES (MORE TO DO)
 
 % Initial node types:
 %   load: keep node, calculate nominalKW
@@ -85,7 +83,7 @@ for iN = 1:height(G.Nodes)
         
         case 'node'
             if isfield(props,'bustype')
-                disp(['bustype for node: ',char(G.Nodes.Name(iN)),' (id ',num2str(iN),')']);
+                disp(['bustype for ',char(G.Nodes.Name(iN)),' (id ',num2str(iN),'); set as source']);
                 if strcmpi(props.bustype,'SWING')
                     G.Nodes.Type(iN) = 'source';
                 else
@@ -107,8 +105,8 @@ for iN = 1:height(G.Nodes)
 
 end
 
-%% CONVERT EDGES
-% then convert edges: either keep as edge or convert to node
+%% CONVERT EDGES (NEEDS REVIEW; SELECT PROPERTIES)
+% check edge types: either keep as edge or convert to node
 for iE = 1:height(G.Edges)
     length = 5; % default length
     % special cases for each edge type
@@ -132,7 +130,8 @@ for iE = 1:height(G.Edges)
             Gt = addedge(Gt,sNode,tNode,EdgeProps);
         
         case {'transformer','switch','fuse','regulator'}
-            % check status property
+            % CONVERT TO NODE
+            % check "status" property; should be "closed"
             if isfield(G.Edges.Prop{iE},'status')
                 if ~strcmpi(G.Edges.Prop{iE}.status,'CLOSED')
                     warning(['Edge ',num2str(iE),' status is NOT closed']);
@@ -150,18 +149,10 @@ for iE = 1:height(G.Edges)
             Gt = addedge(Gt,sNode,G.Edges.Name{iE},EdgeProps);
             Gt = addedge(Gt,G.Edges.Name{iE},tNode,EdgeProps);            
 
-
         otherwise
             error('Edge type missing in switch loop')
     end
 end
-
-            %   parent: ?? (no Props available)
-%   transformer: convert to node
-%   switch: convert to node (check Prop.status == CLOSED)
-%   fuse: convert to node (check Prop.status == CLOSED)
-%   regulator: convert to node
-%   triplex_line:
 
 %% IDENTIFY SOURCE NODE and adjust directed edges
 
@@ -193,7 +184,7 @@ edgeAddWeight = [];
 removeNodeList = {};
 for iN = 1:height(Gt.Nodes)
     % meter type
-    if strcmpi(Gt.Nodes.Type(iN),'meter')
+    if strcmpi(Gt.Nodes.Type(iN),'meter') || strcmpi(Gt.Nodes.Type(iN),'triplex_meter')
         % remove all meters
         if (indegree(Gt,iN)==1)&&(outdegree(Gt,iN)==1)
             edgeAddS{end+1} = Gt.Nodes.Name(predecessors(Gt,iN));
@@ -224,7 +215,7 @@ edgeAddWeight = [];
 removeNodeList = {};
 for iN = 1:height(Gt.Nodes)
     % node type
-    if strcmpi(Gt.Nodes.Type(iN),'node')
+    if strcmpi(Gt.Nodes.Type(iN),'node') || strcmpi(Gt.Nodes.Type(iN),'triplex_node')
         % remove node nodes at the end of a line
         if (indegree(Gt,iN)==0)||(outdegree(Gt,iN)==0)
             removeNodeList{end+1} = Gt.Nodes.Name{iN};
@@ -258,6 +249,10 @@ end
 % remove nodes (keep after adding edges)
 Gt = rmnode(Gt,removeNodeList);
 
+%% REMOVE TERMINAL NODES THAT ARE NOT LOADS
+disp('Initial end node types:')
+disp(unique(endTypes(Gt))')
+
 
 
 figure(3)
@@ -273,4 +268,4 @@ title('Gt (translated and edges adjusted)')
 
 
 % tabel of pairs
-[t1,t2] = typePairs(Gt)
+%[t1,t2] = typePairs(Gt)
