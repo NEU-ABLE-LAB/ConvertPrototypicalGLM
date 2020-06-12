@@ -163,6 +163,27 @@ end
 %   regulator: convert to node
 %   triplex_line:
 
+%% IDENTIFY SOURCE NODE and adjust directed edges
+
+sourceID = find(Gt.Nodes.Type == 'source');
+if isempty(sourceID)
+    error('no source node found')
+elseif numel(sourceID)>1
+    error('multiple source nodes found')
+end
+Gt = redirectDigraph(Gt,sourceID);
+
+figure(2)
+%p2 = plot(Gt,'NodeLabel',Gt.Nodes.Name,'EdgeLabel',Gt.Edges.Name);
+p2 = plot(Gt,'Layout','layered','NodeLabel',Gt.Nodes.Name,...
+    'EdgeLabel',Gt.Edges.Name);
+%p2 = plot(Gt,'Layout','direct','NodeLabel',Gt.Nodes.Name,...
+%    'EdgeLabel',Gt.Edges.Name,'WeightEffect','direct');
+%p2 = plot(Gt,'Layout','force','NodeLabel',Gt.Nodes.Name,...
+%    'EdgeLabel',Gt.Edges.Name,'WeightEffect','direct',...
+%    'UseGravity','on','Iterations',1);
+title('Gt (all edges, direction fixed)')
+
 %% REMOVE METERS
 edgeAddS = {};
 edgeAddT = {};
@@ -237,20 +258,11 @@ end
 % remove nodes (keep after adding edges)
 Gt = rmnode(Gt,removeNodeList);
 
-%% IDENTIFY SOURCE NODE and adjust directed edges
-
-sourceID = find(Gt.Nodes.Type == 'source');
-if isempty(sourceID)
-    error('no source node found')
-elseif numel(sourceID)>1
-    error('multiple source nodes found')
-end
-Gt = redirectDigraph(Gt,sourceID);
 
 
-figure(2)
+figure(3)
 %p2 = plot(Gt,'NodeLabel',Gt.Nodes.Name,'EdgeLabel',Gt.Edges.Name);
-p2 = plot(Gt,'Layout','layered','NodeLabel',Gt.Nodes.Name,...
+p3 = plot(Gt,'Layout','layered','NodeLabel',Gt.Nodes.Name,...
     'EdgeLabel',Gt.Edges.Name);
 %p2 = plot(Gt,'Layout','direct','NodeLabel',Gt.Nodes.Name,...
 %    'EdgeLabel',Gt.Edges.Name,'WeightEffect','direct');
@@ -261,4 +273,4 @@ title('Gt (translated and edges adjusted)')
 
 
 % tabel of pairs
-%[t1,t2] = typePairs(Gt)
+[t1,t2] = typePairs(Gt)
