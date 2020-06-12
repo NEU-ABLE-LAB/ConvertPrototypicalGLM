@@ -1,9 +1,20 @@
 % translateG
 % take the results from convertGLM / glm2net and translate
+% G is the 
+%% TO DO:
+% - fix directions of edges
+% - consider: display as "layered" for hierarchy & impact of length on plotting
+% - create "simple" version
 
+%%
 addpath([pwd,'\results\'])
 % test case
 load('R1-12.47-3.mat')
+
+figure(1)
+p1 = plot(G,'Layout','force','NodeLabel',G.Nodes.Name,...
+    'EdgeLabel',G.Edges.Name);
+title('G (Initial)')
 
 % remove model name from node (edge table automatically updated) and edge names
 % replace "_" from model names to make plotting cleaner
@@ -190,15 +201,23 @@ Gt = rmnode(Gt,removeNodeList);
 % ** node 'reg-1' is all alone!
 
 
-%p = plot(Gt,'NodeLabel',Gt.Nodes.Name,'EdgeLabel',Gt.Edges.Name);
-
 figure(2)
-p = plot(Gt,'Layout','force','NodeLabel',Gt.Nodes.Name,...
+%p2 = plot(Gt,'NodeLabel',Gt.Nodes.Name,'EdgeLabel',Gt.Edges.Name);
+p2 = plot(Gt,'Layout','force','NodeLabel',Gt.Nodes.Name,...
     'EdgeLabel',Gt.Edges.Name);
-
-%p = plot(Gt,'Layout','force','NodeLabel',Gt.Nodes.Name,...
+%p2 = plot(Gt,'Layout','direct','NodeLabel',Gt.Nodes.Name,...
+%    'EdgeLabel',Gt.Edges.Name,'WeightEffect','direct');
+%p2 = plot(Gt,'Layout','force','NodeLabel',Gt.Nodes.Name,...
 %    'EdgeLabel',Gt.Edges.Name,'WeightEffect','direct',...
 %    'UseGravity','on','Iterations',1);
+title('Gt (Translated)')
+
+% TROUBLESHOOT ONLY (not valid source node)
+Gt2 = redirectDigraph(Gt,18);
+figure(3)
+p3 = plot(Gt2,'Layout','force','NodeLabel',Gt2.Nodes.Name,...
+    'EdgeLabel',Gt2.Edges.Name);
+
 
 % tabel of pairs
 [t1,t2] = typePairs(Gt)

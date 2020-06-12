@@ -9,7 +9,8 @@ Source .glm files were downloaded from  https://sourceforge.net/p/gridlab-d/code
 To repeat this analysis:
 1. Clear the folder "\results"
 2. Run parseGLM to convert each .glm into a string array
-3. ...more to come...
+3. Run convertGLM to convert string array into graph() objects
+...more to come...
 
 
 ## Results
