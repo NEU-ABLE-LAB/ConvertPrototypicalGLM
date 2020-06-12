@@ -2,7 +2,7 @@
 % take the results from convertGLM / glm2net and translate
 % G is the 
 %% TO DO:
-% - fix directions of edges
+% - convert to function
 % - consider: display as "layered" for hierarchy & impact of length on plotting
 % - create "simple" version
 
@@ -78,6 +78,7 @@ for iN = 1:height(G.Nodes)
         case 'node'
         case 'triplex_meter'
         case 'triplex_node'
+        case 'capacitor'
         otherwise
             error('Node type missing in switch loop')
     end
@@ -200,6 +201,10 @@ Gt = rmnode(Gt,removeNodeList);
 
 % ** node 'reg-1' is all alone!
 
+%% IDENTIFY SOURCE NODE and adjust directed edges
+% TROUBLESHOOT ONLY (not valid source node)
+Gt = redirectDigraph(Gt,18);
+
 
 figure(2)
 %p2 = plot(Gt,'NodeLabel',Gt.Nodes.Name,'EdgeLabel',Gt.Edges.Name);
@@ -210,16 +215,7 @@ p2 = plot(Gt,'Layout','auto','NodeLabel',Gt.Nodes.Name,...
 %p2 = plot(Gt,'Layout','force','NodeLabel',Gt.Nodes.Name,...
 %    'EdgeLabel',Gt.Edges.Name,'WeightEffect','direct',...
 %    'UseGravity','on','Iterations',1);
-title('Gt (Translated)')
-
-
-%% IDENTIFY SOURCE NODE and adjust directed edges
-% TROUBLESHOOT ONLY (not valid source node)
-Gt2 = redirectDigraph(Gt,18);
-figure(3)
-p3 = plot(Gt2,'Layout','auto','NodeLabel',Gt2.Nodes.Name,...
-    'EdgeLabel',Gt2.Edges.Name);
-title('Gt (edges adjusted)')
+title('Gt (translated and edges adjusted)')
 
 
 % tabel of pairs
