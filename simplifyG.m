@@ -187,84 +187,68 @@ G = redirectDigraph(G,sourceID);
 figure(4)
 plot(G,'Layout','layered','NodeLabel',G.Nodes.Name,'EdgeLabel',G.Edges.Name);
 
-%% 5. REMOVE METERS
-% TODO: keep history of removed nodes/edges (history Prop)
-edgeAddS = {};
-edgeAddT = {};
-edgeAddName = {};
-edgeAddType = {};
-edgeAddWeight = [];
-removeNodeList = {};
-for iN = 1:height(Gt.Nodes)
-    % meter type
-    if strcmpi(Gt.Nodes.Type(iN),'meter') || strcmpi(Gt.Nodes.Type(iN),'triplex_meter')
-        % remove all meters (expected to be inline)
-        if (indegree(Gt,iN)==1)&&(outdegree(Gt,iN)==1)
-            edgeAddS{end+1} = Gt.Nodes.Name(predecessors(Gt,iN));
-            edgeAddT{end+1} = Gt.Nodes.Name(successors(Gt,iN));
-            edgeAddName{end+1} = ' ';
-            edgeAddType{end+1} = 'meter';
-            edgeAddWeight(end+1) = 5;
-            removeNodeList{end+1} = Gt.Nodes.Name{iN};
-        else
-            warning(['Unexpected degree for meter node ',num2str(iN)]);
-        end
-    end
-end
-% add edges
-for i = 1:size(edgeAddS,2)
-    EdgeProps = table(edgeAddName(i),edgeAddType(i),edgeAddWeight(i),...
-        'VariableNames',{'Name','Type','Weight'});
-    Gt = addedge(Gt,edgeAddS{i},edgeAddT{i},EdgeProps);
-end
-% remove nodes (keep after adding edges)
-Gt = rmnode(Gt,removeNodeList);
+%% 5. REMOVE INLINE NODES AND MERGE EDGES
+% TODO:
+%   - don't merge OL and UG
+%   - names are too much
 
-%% 6. REMOVE EXTRA NODES
-edgeAddS = {};
-edgeAddT = {};
-edgeAddName = {};
-edgeAddType = {};
-edgeAddWeight = [];
-removeNodeList = {};
-for iN = 1:height(Gt.Nodes)
-    % node type
-    if max(strcmpi(Gt.Nodes.Type(iN),{'node','triplex_node'}))
-        % remove node nodes at the end of a line
-        %if (indegree(Gt,iN)==0)||(outdegree(Gt,iN)==0)
-        %    removeNodeList{end+1} = Gt.Nodes.Name{iN};
-        %end
-        % if between two nodes
-        if (indegree(Gt,iN)==1)&&(outdegree(Gt,iN)==1)
-            % remove if one edge is from the previous simplification
-            if strcmpi(Gt.Edges.Type{inedges(Gt,iN)},'new')
-                edgeAddS{end+1} = Gt.Nodes.Name(predecessors(Gt,iN));
-                edgeAddT{end+1} = Gt.Nodes.Name(successors(Gt,iN));
-                edgeAddName{end+1} = ' ';
-                edgeAddType{end+1} = Gt.Edges.Type{outedges(Gt,iN)};
-                edgeAddWeight(end+1) = 5;
-                removeNodeList{end+1} = Gt.Nodes.Name{iN};
-            elseif strcmpi(Gt.Edges.Type{outedges(Gt,iN)},'new')
-                edgeAddS{end+1} = Gt.Nodes.Name(predecessors(Gt,iN));
-                edgeAddT{end+1} = Gt.Nodes.Name(successors(Gt,iN));
-                edgeAddName{end+1} = ' ';
-                edgeAddType{end+1} = Gt.Edges.Type{inedges(Gt,iN)};
-                edgeAddWeight(end+1) = 5;
-                removeNodeList{end+1} = Gt.Nodes.Name{iN};
+G4 = G; % troubleshooting savepoint
+
+% searching for inline node, merge, search again, until none remain
+flagSearch = 1;
+loops1 = 0;
+while flagSearch && loops1 < 1000
+    
+    iN = 0; % candidate node
+    flagFound = 0; % flag for inline discovered
+    
+    while flagFound==0 && iN<height(G.Nodes)
+        % check each node ID until one is found or all checked
+        iN = iN+1;
+        % for certain types of nodes
+        if max(strcmpi(G.Nodes.Type(iN),{'meter','triplex_meter','node','triplex_node'}))
+            if (indegree(G,iN)==1)&&(outdegree(G,iN)==1)
+                flagFound = 1; % inline discovered
+                if G.Nodes.NominalPower(iN) ~= 0
+                    error('Nominal Power should be zero for inline nodes')
+                end
+                % EndNodes
+                edgeAddS = G.Nodes.Name{predecessors(G,iN)};
+                edgeAddT = G.Nodes.Name{successors(G,iN)};
+                % generate name
+                edgeNameIn = G.Edges.Name(inedges(G,iN));
+                edgeNameOut = G.Edges.Name(outedges(G,iN));
+                edgeAddName = strcat(edgeNameIn,'-',G.Nodes.Name{iN},'-',edgeNameOut);
+                % generate type
+                edgeTypeIn = G.Edges.Type(inedges(G,iN));
+                edgeTypeOut = G.Edges.Type(outedges(G,iN));
+                edgeAddType = strcat(edgeTypeIn,'-',G.Nodes.Type{iN},'-',edgeTypeOut);
+                % generate length
+                edgeAddLength = G.Edges.Length(inedges(G,iN)) + ...
+                    G.Edges.Length(outedges(G,iN));
+                % add new edge
+                EdgeProps = table({edgeAddS,edgeAddT},...
+                edgeAddName,edgeAddType,edgeAddLength,...
+                    'VariableNames',{'EndNodes','Name','Type','Length'});
+                G = addedge(G,EdgeProps);
+                % remove node (also removes connected edges)
+                G = rmnode(G,G.Nodes.Name{iN});
+                
+                
             end
         end
     end
+    if flagFound == 0
+        % no inline nodes discovered, stop searching
+        flagSearch = 0;
+    end
 end
-% add edges
-for i = 1:size(edgeAddS,2)
-    EdgeProps = table(edgeAddName(i),edgeAddType(i),edgeAddWeight(i),...
-        'VariableNames',{'Name','Type','Weight'});
-    Gt = addedge(Gt,edgeAddS{i},edgeAddT{i},EdgeProps);
-end
-% remove nodes (after adding edges)
-Gt = rmnode(Gt,removeNodeList);
 
-%% 7. REMOVE TERMINAL NODES THAT ARE NOT LOADS
+% TROUBLESHOOT: plot
+figure(5)
+plot(G,'Layout','layered','NodeLabel',G.Nodes.Name,'EdgeLabel',G.Edges.Name);
+
+%% 6. REMOVE TERMINAL NODES THAT ARE NOT LOADS
 %disp('Initial end node types:')
 %disp(unique(endTypes(Gt))')
 removeTypes = {'node','triplex_node','switch','transformer','fuse'};
