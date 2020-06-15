@@ -10,12 +10,15 @@
 
 %% Notes and formatting:
 % Nodes.Name is cell array of char, otherwise text fields are string arrays
+clear
+
+modelName = 'R1-12.47-3';
 
 %% LOAD
-clear
+
 addpath([pwd,'\results\'])
 % test case
-load('R1-12.47-3.mat')
+load([modelName,'.mat'])
 
 %% 1. RENAME NODES AND EDGES
 G0 = G; % troubleshooting savepoint
@@ -82,11 +85,8 @@ for iN = 1:height(G.Nodes)
         case 'triplex_node'
             % update NominalPower
             powerNom = 0;
-            if isfield(props,'power_1')
-                powerNom = powerNom + str2num(props.power_1);
-            end
-            if isfield(props,'power_2')
-                powerNom = powerNom + str2num(props.power_2);
+            if isfield(props,'power_12')
+                powerNom = str2num(props.power_12);
             end
             G.Nodes.NominalPower(iN) = real(powerNom);
         case {'capacitor','meter','triplex_meter'}
@@ -188,53 +188,64 @@ figure(4)
 plot(G,'Layout','layered','NodeLabel',G.Nodes.Name,'EdgeLabel',G.Edges.Name);
 
 %% 5. REMOVE INLINE NODES AND MERGE EDGES
-% TODO:
-%   - don't merge OL and UG
-%   - names are too much
-
 G4 = G; % troubleshooting savepoint
-
+G.Edges.MergeLog(:) = ""; % property to record names
 % searching for inline node, merge, search again, until none remain
 flagSearch = 1;
 loops1 = 0;
-while flagSearch && loops1 < 1000
-    
+while flagSearch && loops1 < 10000
     iN = 0; % candidate node
+    loops1 = loops1 + 1;
     flagFound = 0; % flag for inline discovered
-    
+    % check each node ID until one is found or all checked
     while flagFound==0 && iN<height(G.Nodes)
-        % check each node ID until one is found or all checked
         iN = iN+1;
-        % for certain types of nodes
+        % if one of candidate node types
         if max(strcmpi(G.Nodes.Type(iN),{'meter','triplex_meter','node','triplex_node'}))
+        
+            % if only one edge in and one edge out
             if (indegree(G,iN)==1)&&(outdegree(G,iN)==1)
-                flagFound = 1; % inline discovered
-                if G.Nodes.NominalPower(iN) ~= 0
-                    error('Nominal Power should be zero for inline nodes')
-                end
-                % EndNodes
-                edgeAddS = G.Nodes.Name{predecessors(G,iN)};
-                edgeAddT = G.Nodes.Name{successors(G,iN)};
-                % generate name
-                edgeNameIn = G.Edges.Name(inedges(G,iN));
-                edgeNameOut = G.Edges.Name(outedges(G,iN));
-                edgeAddName = strcat(edgeNameIn,'-',G.Nodes.Name{iN},'-',edgeNameOut);
-                % generate type
                 edgeTypeIn = G.Edges.Type(inedges(G,iN));
                 edgeTypeOut = G.Edges.Type(outedges(G,iN));
-                edgeAddType = strcat(edgeTypeIn,'-',G.Nodes.Type{iN},'-',edgeTypeOut);
-                % generate length
-                edgeAddLength = G.Edges.Length(inedges(G,iN)) + ...
-                    G.Edges.Length(outedges(G,iN));
-                % add new edge
-                EdgeProps = table({edgeAddS,edgeAddT},...
-                edgeAddName,edgeAddType,edgeAddLength,...
-                    'VariableNames',{'EndNodes','Name','Type','Length'});
-                G = addedge(G,EdgeProps);
-                % remove node (also removes connected edges)
-                G = rmnode(G,G.Nodes.Name{iN});
                 
-                
+                % if in edge or out edge matches type to be consolidated
+                if max(strcmpi(edgeTypeIn,{'parent',''})) || max(strcmpi(edgeTypeOut,{'parent',''}))
+                    flagFound = 1; % inline discovered
+                    if G.Nodes.NominalPower(iN) ~= 0
+                        error('Nominal Power should be zero for inline nodes')
+                    end
+                    % EndNodes
+                    edgeAddS = G.Nodes.Name{predecessors(G,iN)};
+                    edgeAddT = G.Nodes.Name{successors(G,iN)};
+                    % replacement edge name and type
+                    if ~max(strcmpi(edgeTypeIn,{'parent',''}))
+                        % if in edge is relevant (both can't be relevant)
+                        edgeAddName = G.Edges.Name(inedges(G,iN));
+                        edgeAddType = G.Edges.Type(inedges(G,iN));
+                        edgeAddLength = G.Edges.Length(inedges(G,iN));
+                    elseif ~max(strcmpi(edgeTypeOut,{'parent',''}))
+                        % if out edge is relevant (both can't be relevant)
+                        edgeAddName = G.Edges.Name(outedges(G,iN));
+                        edgeAddType = G.Edges.Type(outedges(G,iN));
+                        edgeAddLength = G.Edges.Length(outedges(G,iN));
+                    else
+                        % else leave name and type blank
+                        edgeAddName = "";
+                        edgeAddType = "";
+                        edgeAddLength = 1;
+                    end
+                    % generate MergeLog string
+                    edgeMergeLogIn = G.Edges.MergeLog(inedges(G,iN));
+                    edgeMergeLogOut = G.Edges.MergeLog(outedges(G,iN));
+                    edgeAddMergeLog = strcat(edgeMergeLogIn,'_',G.Nodes.Name{iN},'_',edgeMergeLogOut);
+                    % add new edge
+                    EdgeProps = table({edgeAddS,edgeAddT},...
+                    edgeAddName,edgeAddType,edgeAddLength,edgeAddMergeLog,...
+                        'VariableNames',{'EndNodes','Name','Type','Length','MergeLog'});
+                    G = addedge(G,EdgeProps);
+                    % remove old node (also removes connected edges)
+                    G = rmnode(G,G.Nodes.Name{iN});
+                end
             end
         end
     end
@@ -249,30 +260,50 @@ figure(5)
 plot(G,'Layout','layered','NodeLabel',G.Nodes.Name,'EdgeLabel',G.Edges.Name);
 
 %% 6. REMOVE TERMINAL NODES THAT ARE NOT LOADS
-%disp('Initial end node types:')
-%disp(unique(endTypes(Gt))')
-removeTypes = {'node','triplex_node','switch','transformer','fuse'};
-loops = 0;
-while ~min(unique(endTypes(Gt))=="load") && loops < 100
-    loops = loops + 1;
-    removeNodeList = {};
-    for iN = 1:height(Gt.Nodes)
-        if outdegree(Gt,iN)==0 && max(strcmpi(Gt.Nodes.Type(iN),removeTypes))
-            removeNodeList{end+1} = Gt.Nodes.Name{iN};
+G5 = G; % troubleshooting savepoint
+G.Nodes.MergeLog(:) = ""; % property to record names
+% searching for terminal node, merge, search again, until none remain
+flagSearch = 1;
+loops1 = 0;
+while flagSearch && loops1 < 10000
+    iN = 0; % candidate node
+    loops1 = loops1 + 1;
+    flagFound = 0; % flag for terminal node discovered
+    while flagFound==0 && iN<height(G.Nodes)
+        iN = iN+1;
+        % if terminal node
+        if isempty(outedges(G,iN)) && strcmpi(G.Nodes.Type(iN),'node')
+            flagFound = 1;
+            % add node and edge name to upstream node MergeLog
+            upNodeID = predecessors(G,iN);
+            edgeID = inedges(G,iN);
+            G.Nodes.MergeLog(upNodeID) = ...
+                strcat(G.Nodes.MergeLog(upNodeID),'_',...
+                G.Edges.Name(edgeID),'_',G.Nodes.Name(iN));
+            % remove node
+            G = rmnode(G,iN);
         end
     end
-    Gt = rmnode(Gt,removeNodeList);
+    if flagFound == 0
+        % no terminal nodes discovered, stop searching
+        flagSearch = 0;
+    end
 end
 
-%% TROUBLESHOOT: plot
-%figure(3)
-%p3 = plot(Gt,'Layout','layered','NodeLabel',Gt.Nodes.Name,...
-%    'EdgeLabel',Gt.Edges.Name);
-%title('Gt (translated and edges adjusted)')
+% TROUBLESHOOT: list terminal node types
+disp('--Terminal Node Types--');
+for iN = 1:height(G.Nodes)
+   if isempty(outedges(G,iN))
+       disp(G.Nodes.Type(iN));
+   end
+end
 
-
-% tabel of pairs
-%[t1,t2] = typePairs(Gt)
+% TROUBLESHOOT: plot
+figure(6)
+plot(G,'Layout','layered','NodeLabel',G.Nodes.Name,'EdgeLabel',G.Edges.Name);
 
 %% SAVE
 % (In new folder)
+save([pwd,'\output\',char(modelName),'.mat'],'G','modelName')
+
+
