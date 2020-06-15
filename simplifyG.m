@@ -1,28 +1,35 @@
-% take the results from convertGLM / glm2net and translate
-% G is the 
+% take the results from convertGLM / glm2net and simplify
 %% TO DO:
 % - convert to function
 % - consider: display as "layered" for hierarchy & impact of length on plotting
 % - create "simple" version
+% - check and document properties retained
+% - REMOVE nodes between only 2 others (add WHILE LOOP)
+%   - choose when to inherit properties (name/length) of edges
+% remove troubleshoot plots
+
+%% Notes and formatting:
+% Nodes.Name is cell array of char, otherwise text fields are string arrays
 
 %% LOAD
 addpath([pwd,'\results\'])
 % test case
 load('R1-12.47-3.mat')
 
-%% RENAME NODES AND EDGES
+%% 1. RENAME NODES AND EDGES
+G0 = G; % troubleshooting savepoint
 % remove model name from node (edge table automatically updated) and edge names
 % replace "_" with "-" to make plotting cleaner
 removeStr = strcat(replace(modelName,".","-"),'_');
 % loop through nodes
 for iN = 1:height(G.Nodes)
+    % rename (note: Name must be cell array)
     initName = G.Nodes.Name{iN};
     newName = erase(initName,removeStr);
     newName = replace(newName,"_","-");
     G.Nodes.Name{iN} = newName;
 end
-% loop through edges
-% Note: edge Names do not need to be unique
+% loop through edges (note: edge Names do not need to be unique)
 for iE = 1:height(G.Edges)
     initName = G.Edges.Name{iE};
     newName = erase(initName,removeStr);
@@ -32,44 +39,23 @@ end
 
 % TROUBLESHOOT: plot
 figure(1)
-p1 = plot(G,'Layout','layered','NodeLabel',G.Nodes.Name,...
-    'EdgeLabel',G.Edges.Name);
-title('G (Initial)')
+plot(G,'Layout','layered','NodeLabel',G.Nodes.Name,'EdgeLabel',G.Edges.Name);
 
+%% CREATE NEW GRAPH
+%Gt = digraph;
 
-%% CONVERT NODES (MORE TO DO)
+%% 2. NODES: Extract and clean up properties
+G1 = G; % troubleshooting savepoint
+% Keep properties: Name, Type
+% New properties: NominalPower
 
-% Initial node types:
-%   load: keep node, calculate nominalKW
-%   meter: consider removing 
-%   node: consider removing (if k_in = k_out = 1)
-%       ** not always the case (can be more), what if k_out = 0?
-%   triplex_meter: consider removing
-%   triplex_node: consider removing
-%   ...more???
-% Initial edge types:
-%   overhead_line: keep as edge, weight = Prop.length
-%   underground_line: keep as edge, weight = Prop.length
-%   parent: ?? (no Props available)
-%   transformer: convert to node
-%   switch: convert to node (check Prop.status == CLOSED)
-%   fuse: convert to node (check Prop.status == CLOSED)
-%   regulator: convert to node
-%   triplex_line: keep as edge, weight = Prop.length
-%   ...more???
-
-% For new edges, use Weight = 5, Name = ""
-
-Gt = digraph;
-% first convert all nodes
 for iN = 1:height(G.Nodes)
-    powerNom = 0; % default nominal power
-    
-    % special cases for each node type
     props = G.Nodes.Prop{iN};
+    % check node type
     switch lower(G.Nodes.Type(iN))
-        
         case 'load'
+            % update NominalPower
+            powerNom = 0;
             if isfield(props,'constant_power_A')
                 powerNom = powerNom + str2num(props.constant_power_A);
             end
@@ -79,59 +65,88 @@ for iN = 1:height(G.Nodes)
             if isfield(props,'constant_power_C')
                 powerNom = powerNom + str2num(props.constant_power_C);
             end
-            powerNom = real(powerNom);
-        case 'meter'
-        
+            G.Nodes.NominalPower(iN) = real(powerNom);
         case 'node'
+            % check for type and ID source node
             if isfield(props,'bustype')
                 disp(['bustype for ',char(G.Nodes.Name(iN)),' (id ',num2str(iN),'); set as source']);
                 if strcmpi(props.bustype,'SWING')
+                    % swing bus is infinite bus (i.e. source)
                     G.Nodes.Type(iN) = 'source';
                 else
-                    warning('Bustype is not "SWING"');
+                    warning('Unexpected node bustype (not "SWING")');
                 end
             end
-        case 'triplex_meter'
-            
+            G.Nodes.NominalPower(iN) = 0;
         case 'triplex_node'
-            
-        case 'capacitor'
-            
+            % update NominalPower
+            powerNom = 0;
+            if isfield(props,'power_1')
+                powerNom = powerNom + str2num(props.power_1);
+            end
+            if isfield(props,'power_2')
+                powerNom = powerNom + str2num(props.power_2);
+            end
+            G.Nodes.NominalPower(iN) = real(powerNom);
+        case {'capacitor','meter','triplex_meter'}
+            % nothing for these types
+            G.Nodes.NominalPower(iN) = 0;
         otherwise
             error('Node type missing in switch loop')
     end
-    NodeProps = table(G.Nodes.Name(iN),G.Nodes.Type(iN),powerNom/1000,...
-                'VariableNames',{'Name','Type','KWnom'});
-    Gt = addnode(Gt,NodeProps);
-
 end
 
-%% CONVERT EDGES (NEEDS REVIEW; SELECT PROPERTIES)
+% remove unused properties
+G.Nodes.glmName = [];
+G.Nodes.ID = [];
+G.Nodes.Line = [];
+G.Nodes.Prop = [];
+G.Nodes.DegreeIn = [];
+G.Nodes.DegreeOut = [];
+G.Nodes.DegreeSum = [];
+    
+% TROUBLESHOOT: plot
+figure(2)
+plot(G,'Layout','layered','NodeLabel',G.Nodes.Name,'EdgeLabel',G.Edges.Name);
+
+    %NodeProps = table(G.Nodes.Name(iN),G.Nodes.Type(iN),powerNom/1000,...
+    %            'VariableNames',{'Name','Type','KWnom'});
+    %Gt = addnode(Gt,NodeProps);
+
+%% 3. EDGES: Convert some, extract and clean properties
+G2 = G; % troubleshooting savepoint
+% cell arrays for new and removed edges (added at end due to for loop)
+edgeAddS = {};
+edgeAddT = {};
+edgeRemoveS = {};
+edgeRemoveT = {};
 % check edge types: either keep as edge or convert to node
 for iE = 1:height(G.Edges)
-    length = 5; % default length
-    % special cases for each edge type
+    %length = 5; % default length
+    props = G.Edges.Prop{iE};
+    % check edge type
     switch lower(G.Edges.Type(iE))
-        
         case {'overhead_line','underground_line','triplex_line'}
+            G.Edges.Length(iE) = str2num(props.length);
             % keep as edge, weight = Prop.length
-            sNode = G.Edges.EndNodes{iE,1};
-            tNode = G.Edges.EndNodes{iE,2};
-            EdgeProps = table({G.Edges.Name{iE}},{G.Edges.Type{iE}},...
-                str2double(G.Edges.Prop{iE}.length),...
-                'VariableNames',{'Name','Type','Weight'});
-            Gt = addedge(Gt,sNode,tNode,EdgeProps);
+            %sNode = G.Edges.EndNodes{iE,1};
+            %tNode = G.Edges.EndNodes{iE,2};
+            %EdgeProps = table({G.Edges.Name{iE}},{G.Edges.Type{iE}},...
+            %    str2double(G.Edges.Prop{iE}.length),...
+            %    'VariableNames',{'Name','Type','Weight'});
+            %Gt = addedge(Gt,sNode,tNode,EdgeProps);
         
         case 'parent'
+            G.Edges.Length(iE) = 1;
             % keep as edge, weight (length equivalent) = 5
-            sNode = G.Edges.EndNodes{iE,1};
-            tNode = G.Edges.EndNodes{iE,2};
-            EdgeProps = table({G.Edges.Name{iE}},{G.Edges.Type{iE}},5,...
-                'VariableNames',{'Name','Type','Weight'});
-            Gt = addedge(Gt,sNode,tNode,EdgeProps);
+            %sNode = G.Edges.EndNodes{iE,1};
+            %tNode = G.Edges.EndNodes{iE,2};
+            %EdgeProps = table({G.Edges.Name{iE}},{G.Edges.Type{iE}},5,...
+            %    'VariableNames',{'Name','Type','Weight'});
+            %Gt = addedge(Gt,sNode,tNode,EdgeProps);
         
         case {'transformer','switch','fuse','regulator'}
-            % CONVERT TO NODE
+            % convert to node
             % check "status" property; should be "closed"
             if isfield(G.Edges.Prop{iE},'status')
                 if ~strcmpi(G.Edges.Prop{iE}.status,'CLOSED')
@@ -139,23 +154,48 @@ for iE = 1:height(G.Edges)
                 end
             end
             % add as node
-            NodeProps = table(G.Edges.Name(iE),G.Edges.Type(iE),0,...
-                'VariableNames',{'Name','Type','KWnom'});
-            Gt = addnode(Gt,NodeProps);
+            newName = G.Edges.Name(iE);
+            NodeProps = table(newName,G.Edges.Type(iE),0,...
+                'VariableNames',{'Name','Type','NominalPower'});
+            G = addnode(G,NodeProps);
+            
+            % track EndNodes for two new edges
+            edgeAddS{end+1} = G.Edges.EndNodes{iE,1};
+            edgeAddT{end+1} = char(newName);
+            edgeAddS{end+1} = char(newName);
+            edgeAddT{end+1} = G.Edges.EndNodes{iE,2};
+            % track EndNodes to be removed
+            edgeRemoveS{end+1} = G.Edges.EndNodes{iE,1};
+            edgeRemoveT{end+1} = G.Edges.EndNodes{iE,2};
             % connect to each end node, weight (length equivalent) = 5
-            sNode = G.Edges.EndNodes{iE,1};
-            tNode = G.Edges.EndNodes{iE,2};
-            EdgeProps = table({' '},{'new'},5,...
-                'VariableNames',{'Name','Type','Weight'});
-            Gt = addedge(Gt,sNode,G.Edges.Name{iE},EdgeProps);
-            Gt = addedge(Gt,G.Edges.Name{iE},tNode,EdgeProps);            
-
+            %sNode = G.Edges.EndNodes{iE,1};
+            %tNode = G.Edges.EndNodes{iE,2};
+            %EdgeProps = table({' '},{'new'},5,...
+            %    'VariableNames',{'Name','Type','Weight'});
+            %Gt = addedge(Gt,sNode,G.Edges.Name{iE},EdgeProps);
+            %Gt = addedge(Gt,G.Edges.Name{iE},tNode,EdgeProps);            
         otherwise
             error('Edge type missing in switch loop')
     end
 end
+% add edges (default length 5)
+for i = 1:numel(edgeAddS)
+    EdgeProps = table("","",5,...
+        'VariableNames',{'Name','Type','Weight'});
+    %Gt = addedge(Gt,edgeAddS{i},edgeAddT{i},EdgeProps);
+    G = addedge(G,edgeAddS{i},edgeAddT{i});
+end
 
-%% IDENTIFY SOURCE NODE and adjust directed edges
+% ## remove edges
+for i = 1:numel(edgeRemoveS)
+    G = rmedge(G,edgeRemoveS{i},edgeRemoveT{i});
+end
+
+% TROUBLESHOOT: plot
+figure(3)
+plot(G,'Layout','layered','NodeLabel',G.Nodes.Name,'EdgeLabel',G.Edges.Name);
+
+%% 4. IDENTIFY SOURCE NODE and adjust directed edges
 sourceID = find(Gt.Nodes.Type == 'source');
 if isempty(sourceID)
     error('no source node found')
@@ -170,7 +210,8 @@ p2 = plot(Gt,'Layout','layered','NodeLabel',Gt.Nodes.Name,...
     'EdgeLabel',Gt.Edges.Name);
 title('Gt (all edges, direction fixed)')
 
-%% REMOVE METERS
+%% 5. REMOVE METERS
+% TODO: keep history of removed nodes/edges (history Prop)
 edgeAddS = {};
 edgeAddT = {};
 edgeAddName = {};
@@ -180,7 +221,7 @@ removeNodeList = {};
 for iN = 1:height(Gt.Nodes)
     % meter type
     if strcmpi(Gt.Nodes.Type(iN),'meter') || strcmpi(Gt.Nodes.Type(iN),'triplex_meter')
-        % remove all meters
+        % remove all meters (expected to be inline)
         if (indegree(Gt,iN)==1)&&(outdegree(Gt,iN)==1)
             edgeAddS{end+1} = Gt.Nodes.Name(predecessors(Gt,iN));
             edgeAddT{end+1} = Gt.Nodes.Name(successors(Gt,iN));
@@ -193,6 +234,7 @@ for iN = 1:height(Gt.Nodes)
         end
     end
 end
+% add edges
 for i = 1:size(edgeAddS,2)
     EdgeProps = table(edgeAddName(i),edgeAddType(i),edgeAddWeight(i),...
         'VariableNames',{'Name','Type','Weight'});
@@ -201,7 +243,7 @@ end
 % remove nodes (keep after adding edges)
 Gt = rmnode(Gt,removeNodeList);
 
-%% REMOVE EXTRA NODES
+%% 6. REMOVE EXTRA NODES
 edgeAddS = {};
 edgeAddT = {};
 edgeAddName = {};
@@ -236,15 +278,16 @@ for iN = 1:height(Gt.Nodes)
         end
     end
 end
+% add edges
 for i = 1:size(edgeAddS,2)
     EdgeProps = table(edgeAddName(i),edgeAddType(i),edgeAddWeight(i),...
         'VariableNames',{'Name','Type','Weight'});
     Gt = addedge(Gt,edgeAddS{i},edgeAddT{i},EdgeProps);
 end
-% remove nodes (keep after adding edges)
+% remove nodes (after adding edges)
 Gt = rmnode(Gt,removeNodeList);
 
-%% REMOVE TERMINAL NODES THAT ARE NOT LOADS
+%% 7. REMOVE TERMINAL NODES THAT ARE NOT LOADS
 %disp('Initial end node types:')
 %disp(unique(endTypes(Gt))')
 removeTypes = {'node','triplex_node','switch','transformer','fuse'};
@@ -261,11 +304,14 @@ while ~min(unique(endTypes(Gt))=="load") && loops < 100
 end
 
 %% TROUBLESHOOT: plot
-figure(3)
-p3 = plot(Gt,'Layout','layered','NodeLabel',Gt.Nodes.Name,...
-    'EdgeLabel',Gt.Edges.Name);
-title('Gt (translated and edges adjusted)')
+%figure(3)
+%p3 = plot(Gt,'Layout','layered','NodeLabel',Gt.Nodes.Name,...
+%    'EdgeLabel',Gt.Edges.Name);
+%title('Gt (translated and edges adjusted)')
 
 
 % tabel of pairs
 %[t1,t2] = typePairs(Gt)
+
+%% SAVE
+% (In new folder)
