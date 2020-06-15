@@ -178,12 +178,19 @@ for iE = 1:height(G.Edges)
             error('Edge type missing in switch loop')
     end
 end
-% add edges (default length 5)
+
+% remove unused properties
+G.Edges.glmName = [];
+G.Edges.ID = [];
+G.Edges.Line = [];
+G.Edges.Prop = [];
+
+% add new edges
+%   Name and Type empty string, Length 5
 for i = 1:numel(edgeAddS)
-    EdgeProps = table("","",5,...
-        'VariableNames',{'Name','Type','Weight'});
-    %Gt = addedge(Gt,edgeAddS{i},edgeAddT{i},EdgeProps);
-    G = addedge(G,edgeAddS{i},edgeAddT{i});
+    EdgeProps = table({edgeAddS{i},edgeAddT{i}},"","",5,...
+        'VariableNames',{'EndNodes','Name','Type','Length'});
+    G = addedge(G,EdgeProps);
 end
 
 % ## remove edges
