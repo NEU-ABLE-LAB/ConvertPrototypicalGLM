@@ -12,6 +12,7 @@
 % Nodes.Name is cell array of char, otherwise text fields are string arrays
 
 %% LOAD
+clear
 addpath([pwd,'\results\'])
 % test case
 load('R1-12.47-3.mat')
@@ -109,10 +110,6 @@ G.Nodes.DegreeSum = [];
 figure(2)
 plot(G,'Layout','layered','NodeLabel',G.Nodes.Name,'EdgeLabel',G.Edges.Name);
 
-    %NodeProps = table(G.Nodes.Name(iN),G.Nodes.Type(iN),powerNom/1000,...
-    %            'VariableNames',{'Name','Type','KWnom'});
-    %Gt = addnode(Gt,NodeProps);
-
 %% 3. EDGES: Convert some, extract and clean properties
 G2 = G; % troubleshooting savepoint
 % cell arrays for new and removed edges (added at end due to for loop)
@@ -128,23 +125,8 @@ for iE = 1:height(G.Edges)
     switch lower(G.Edges.Type(iE))
         case {'overhead_line','underground_line','triplex_line'}
             G.Edges.Length(iE) = str2num(props.length);
-            % keep as edge, weight = Prop.length
-            %sNode = G.Edges.EndNodes{iE,1};
-            %tNode = G.Edges.EndNodes{iE,2};
-            %EdgeProps = table({G.Edges.Name{iE}},{G.Edges.Type{iE}},...
-            %    str2double(G.Edges.Prop{iE}.length),...
-            %    'VariableNames',{'Name','Type','Weight'});
-            %Gt = addedge(Gt,sNode,tNode,EdgeProps);
-        
         case 'parent'
             G.Edges.Length(iE) = 1;
-            % keep as edge, weight (length equivalent) = 5
-            %sNode = G.Edges.EndNodes{iE,1};
-            %tNode = G.Edges.EndNodes{iE,2};
-            %EdgeProps = table({G.Edges.Name{iE}},{G.Edges.Type{iE}},5,...
-            %    'VariableNames',{'Name','Type','Weight'});
-            %Gt = addedge(Gt,sNode,tNode,EdgeProps);
-        
         case {'transformer','switch','fuse','regulator'}
             % convert to node
             % check "status" property; should be "closed"
@@ -158,7 +140,6 @@ for iE = 1:height(G.Edges)
             NodeProps = table(newName,G.Edges.Type(iE),0,...
                 'VariableNames',{'Name','Type','NominalPower'});
             G = addnode(G,NodeProps);
-            
             % track EndNodes for two new edges
             edgeAddS{end+1} = G.Edges.EndNodes{iE,1};
             edgeAddT{end+1} = char(newName);
@@ -167,13 +148,6 @@ for iE = 1:height(G.Edges)
             % track EndNodes to be removed
             edgeRemoveS{end+1} = G.Edges.EndNodes{iE,1};
             edgeRemoveT{end+1} = G.Edges.EndNodes{iE,2};
-            % connect to each end node, weight (length equivalent) = 5
-            %sNode = G.Edges.EndNodes{iE,1};
-            %tNode = G.Edges.EndNodes{iE,2};
-            %EdgeProps = table({' '},{'new'},5,...
-            %    'VariableNames',{'Name','Type','Weight'});
-            %Gt = addedge(Gt,sNode,G.Edges.Name{iE},EdgeProps);
-            %Gt = addedge(Gt,G.Edges.Name{iE},tNode,EdgeProps);            
         otherwise
             error('Edge type missing in switch loop')
     end
@@ -184,16 +158,14 @@ G.Edges.glmName = [];
 G.Edges.ID = [];
 G.Edges.Line = [];
 G.Edges.Prop = [];
-
 % add new edges
-%   Name and Type empty string, Length 5
 for i = 1:numel(edgeAddS)
+    % Name and Type empty string, Length 5
     EdgeProps = table({edgeAddS{i},edgeAddT{i}},"","",5,...
         'VariableNames',{'EndNodes','Name','Type','Length'});
     G = addedge(G,EdgeProps);
 end
-
-% ## remove edges
+% remove replaced edges
 for i = 1:numel(edgeRemoveS)
     G = rmedge(G,edgeRemoveS{i},edgeRemoveT{i});
 end
@@ -203,19 +175,17 @@ figure(3)
 plot(G,'Layout','layered','NodeLabel',G.Nodes.Name,'EdgeLabel',G.Edges.Name);
 
 %% 4. IDENTIFY SOURCE NODE and adjust directed edges
-sourceID = find(Gt.Nodes.Type == 'source');
+sourceID = find(G.Nodes.Type == 'source');
 if isempty(sourceID)
     error('no source node found')
 elseif numel(sourceID)>1
     error('multiple source nodes found')
 end
-Gt = redirectDigraph(Gt,sourceID);
+G = redirectDigraph(G,sourceID);
 
 % TROUBLESHOOT: plot
-figure(2)
-p2 = plot(Gt,'Layout','layered','NodeLabel',Gt.Nodes.Name,...
-    'EdgeLabel',Gt.Edges.Name);
-title('Gt (all edges, direction fixed)')
+figure(4)
+plot(G,'Layout','layered','NodeLabel',G.Nodes.Name,'EdgeLabel',G.Edges.Name);
 
 %% 5. REMOVE METERS
 % TODO: keep history of removed nodes/edges (history Prop)
