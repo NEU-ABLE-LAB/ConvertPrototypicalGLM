@@ -127,7 +127,7 @@ for iE = 1:height(G.Edges)
             G.Edges.Length(iE) = str2num(props.length);
         case 'parent'
             G.Edges.Length(iE) = 1;
-        case {'transformer','switch','fuse','regulator'}
+        case {'transformer','switch','fuse','regulator','recloser'}
             % convert to node
             % check "status" property; should be "closed"
             if isfield(G.Edges.Prop{iE},'status')
