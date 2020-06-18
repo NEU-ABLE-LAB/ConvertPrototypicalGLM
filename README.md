@@ -2,10 +2,13 @@
 Converts prototypical distribution feeders from [GridLAB-D](https://www.gridlabd.org/) .glm files to [MATLAB](https://www.mathworks.com/products/matlab.html) digraph objects. Digraph objects are generated for full and simplified representation.
 
 ## Quick Start
-1. [Download](https://github.com/gridlab-d/Taxonomy_Feeders) prototypical feeder .glm files. Add all 24 .glm files to the "\glm" folder.
-2. Run parseGLM(). This generates ### files in ###.
-3. Run ###. This generates ### files in ###.
-4. Visualize simplified models using ###.
+1. Clear \output folder
+2. [Download](https://github.com/gridlab-d/Taxonomy_Feeders) prototypical feeder .glm files. Add all 24 .glm files to the "\glm" folder.
+
+
+3. Run parseGLM(). This generates ### files in ###.
+4. Run ###. This generates ### files in ###.
+5. Visualize simplified models using ###.
 
 ## Overview of Prototypical Feeders
 This converts prototypical feeders described by Schneider, et al. in [Modern Grid Initiative Distribution Taxonomy Final Report](https://www.osti.gov/biblio/1040684-modern-grid-initiative-distribution-taxonomy-final-report) as part of work by Pacific Northwest National Laboratory (PNNL) on behalf of the Department of Energy.
@@ -78,9 +81,15 @@ Feeder descriptions include the percent loading on the system. This reflects the
 
 Electrical characteristics, e.g. power quality, phase balancing, voltage regulation.
 
+Recorders
+
+
 # Conversion Process and Details
 ## Translate .glm files to string arrays with parseGLM()
 First, copy .glm files to 
+
+## 
+
 
 ## OPEN QUESTIONS
 - Are switches considered fused? Doesn't look like it.
@@ -96,7 +105,6 @@ To repeat this analysis:
 3. Run convertGLM to convert string array into graph() objects
 ...more to come...
 
-TEST EDIT2
 
 - Create quick start guide at top
 - This has only been tested with prototypical feeder files (from commit date 6 Jan 20). Other GridLAB-D files may include syntax, properties, or relationships not covered by this parseGLM().
