@@ -1,5 +1,11 @@
 # ConvertPrototypicalGLD
-This converts the .glm files of prototypical distribution feeders to MATLAB digraph objects. Digraph objects are generated for full and simplified representation.
+Converts prototypical distribution feeders from [GridLAB-D](https://www.gridlabd.org/) .glm files to [MATLAB](https://www.mathworks.com/products/matlab.html) digraph objects. Digraph objects are generated for full and simplified representation.
+
+## Quick Start
+1. [Download](https://github.com/gridlab-d/Taxonomy_Feeders) prototypical feeder .glm files. Add all 24 .glm files to the "\glm" folder.
+2. Run ###. This generates ### files in ###.
+3. Run ###. This generates ### files in ###.
+4. Visualize simplified models using ###.
 
 ## Overview of Prototypical Feeders
 This converts prototypical feeders established by Schneider, et al. in [Modern Grid Initiative Distribution Taxonomy Final Report](https://www.osti.gov/biblio/1040684-modern-grid-initiative-distribution-taxonomy-final-report) as part of work by Pacific Northwest National Laboratory (PNNL) on behalf of the Department of Energy.
@@ -54,9 +60,13 @@ An additional 35 characteristics were considered, including: feeder rating and p
 ## File Access
 Prototypical feeders .glm files are available at https://sourceforge.net/p/gridlab-d/code/HEAD/tree/Taxonomy_Feeders/. Files downloaded on 19 September 2019 are included in the folder "\glm".
 
+These files 
+
 # GridLAB-D Syntax and Data
 
 # Conversion Goals
+
+Files are made available with node and edge lists for visualization in NodeXL. These files include relationships but do not include node or edge properties.
 
 ## Relevant Components and Properties
 Many feeders include normally open switches that provide the ability to transfer load from other feeders, and vice versa.
@@ -73,6 +83,8 @@ Electrical characteristics, e.g. power quality, phase balancing, voltage regulat
 - Impact of reclosers
 - Load class categories (residential, commerical, industrial)
 
+- Download from github page, verify works, update link above
+
 ## Process
 To repeat this analysis:
 1. Clear the folder "\results"
@@ -81,4 +93,5 @@ To repeat this analysis:
 ...more to come...
 
 
-
+- Create quick start guide at top
+- This has only been tested with prototypical feeder files (from commit date 6 Jan 20). Other GridLAB-D files may include syntax, properties, or relationships not covered by this glm2net().
