@@ -96,6 +96,7 @@ To repeat this analysis:
 3. Run convertGLM to convert string array into graph() objects
 ...more to come...
 
+TEST EDIT
 
 - Create quick start guide at top
 - This has only been tested with prototypical feeder files (from commit date 6 Jan 20). Other GridLAB-D files may include syntax, properties, or relationships not covered by this parseGLM().
