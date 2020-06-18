@@ -8,7 +8,7 @@ Converts prototypical distribution feeders from [GridLAB-D](https://www.gridlabd
 4. Visualize simplified models using ###.
 
 ## Overview of Prototypical Feeders
-This converts prototypical feeders established by Schneider, et al. in [Modern Grid Initiative Distribution Taxonomy Final Report](https://www.osti.gov/biblio/1040684-modern-grid-initiative-distribution-taxonomy-final-report) as part of work by Pacific Northwest National Laboratory (PNNL) on behalf of the Department of Energy.
+This converts prototypical feeders described by Schneider, et al. in [Modern Grid Initiative Distribution Taxonomy Final Report](https://www.osti.gov/biblio/1040684-modern-grid-initiative-distribution-taxonomy-final-report) as part of work by Pacific Northwest National Laboratory (PNNL) on behalf of the Department of Energy.
 
 PNNL collected distribution feeder models from electric utilities around the nation. They identified regional differences in design and operation, then established a taxonomy of 24 prototypical feeder models that "contain the fundamental characteristics of non-urban core, radial distribution feeders from the various regions of the U.S." By eliminating proprietary and system-specific information, their models can be used freely. The models are provided in the .glm format for use in the GridLAB-D simulation environment.
 
