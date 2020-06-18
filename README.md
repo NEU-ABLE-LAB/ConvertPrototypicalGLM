@@ -117,6 +117,7 @@ First, copy .glm files to
 
 ## Node Types with Properties
 (Unless denoted otherwise, properties not included in simple representation)
+
 **capacitor**
 1.	cap_nominal_voltage
 2.	capacitor_A/B/C
@@ -132,6 +133,7 @@ First, copy .glm files to
 12.	time_delay
 13.	voltage_set_high
 14.	voltage_set_low
+
 **load**
 1.	constant_power_A/B/C: absolute values (kVA) summed and retained
 2.	load_class
@@ -139,20 +141,24 @@ First, copy .glm files to
 4.	parent: incorporated as edge
 5.	phases
 6.	voltage_A/B/C
+
 **meter**
 1.	nominal_voltage
 2.	phases
 3.	voltage_A/B/C
+
 **node**
 1.	bustype: used to identify source node
 2.	nominal_voltage
 3.	parent: incorporated as edge
 4.	phases
 5.	voltage_A/B/C
+
 **triplex_meter**
 1.	nominal_voltage
 2.	phases
 3.	voltage_1/2/N
+
 **triplex_node**
 1.	nominal_voltage
 2.	parent: incorporated as edge
@@ -162,11 +168,13 @@ First, copy .glm files to
 
 ## Edge Types with Properties
 (Unless denoted otherwise, properties not included in simple representation)
+
 **fuse**: converted to node
 1.	current_limit
 2.	mean_replacement_time
 3.	phases
 4.	status
+
 **overhead_line**
 1.	configuration
 2.	configuration_conductor_A/B/C/N
@@ -177,6 +185,7 @@ First, copy .glm files to
 7.	configuration_spacing_distance_AB/AC/AN/BC/BN/CN
 8.	length
 9.	phases
+
 **recloser**: converted to node
 1.	max_number_of_tries
 2.	numer_of_tries
@@ -184,6 +193,7 @@ First, copy .glm files to
 4.	phases
 5.	retry_time
 6.	status
+
 **regulator**: converted to node
 1.	configuration
 2.	configuration_Control
@@ -196,9 +206,11 @@ First, copy .glm files to
 9.	configuration_tap_pos_A/B/C
 10.	configuration_time_delay
 11.	phases
+
 **switch**: converted to node
 1.	phases
 2.	status
+
 **transformer**: converted to node
 1.	configuration
 2.	configuration_connect_type
@@ -211,6 +223,7 @@ First, copy .glm files to
 9.	configuration_secondary_voltage
 10.	configuration_shunt_impedance
 11.	phases
+
 **triplex_line**
 1.	configuration
 2.	configuration_conductor_1/2/N
@@ -220,6 +233,7 @@ First, copy .glm files to
 6.	configuration_insulation_thickness
 7.	length
 8.	phases
+
 **underground_line**
 1.	configuration
 2.	configuration_conductor_A/B/C/N
