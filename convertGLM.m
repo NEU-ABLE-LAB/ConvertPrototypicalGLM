@@ -1,6 +1,9 @@
-
-
-tic
+%% convertGLM
+% Converts .glm files to digraph object
+%   Requires a file for each feederID in folder "\glm"
+%   Saves each digraph object and its model name to "\output"
+% This has only been tested on Prototypical Feeders; it is possible it
+%   could be extended to other GridLAB-D models
 
 feederIDs = ["GC-12.47-1", "R1-12.47-1", "R1-12.47-2", "R1-12.47-3",...
     "R1-12.47-4", "R1-25.00-1", "R2-12.47-1", "R2-12.47-2", "R2-12.47-3",...
@@ -8,13 +11,12 @@ feederIDs = ["GC-12.47-1", "R1-12.47-1", "R1-12.47-2", "R1-12.47-3",...
     "R4-12.47-1", "R4-12.47-2", "R4-25.00-1", "R5-12.47-1", "R5-12.47-2",...
     "R5-12.47-3", "R5-12.47-4", "R5-12.47-5", "R5-25.00-1", "R5-35.00-1"];
 
-%% TROUBLESHOOT:
-%feederIDs = feederIDs(4);
-
 %% Loop through models
 for iF = 1:length(feederIDs)
     
     modelName = feederIDs(iF);
+    disp(' ')
+    disp(['----STARTING CONVERSION OF ',char(modelName),' (Model ',num2str(iF),'/',num2str(numel(feederIDs)),')----'])
     
     %% Generate digraph
     modelData = parseGLM(modelName);    % load .glm and create string array
@@ -44,7 +46,7 @@ for iF = 1:length(feederIDs)
     for iN = 1:height(G.Nodes)
         props = G.Nodes.Prop{iN};
         if isfield(props,'bustype')
-            disp(['bustype for ',char(G.Nodes.Name(iN)),' (id ',num2str(iN),'); set as source']);
+            disp(['Source node identified and set: ',G.Nodes.Name{iN},' (index ',num2str(iN),')...'])
             if strcmpi(props.bustype,'SWING')
                 % swing bus is infinite bus (i.e. source)
                 G.Nodes.Type(iN) = 'source';
@@ -63,14 +65,12 @@ for iF = 1:length(feederIDs)
     G = redirectDigraph(G,sourceID);
     
     %% Save results
-    
-    allG{iF} = G;
+    save(['output\',char(modelName),'.mat'],'G','modelName')
+    disp(['----COMPLETED CONVERSION OF ',char(modelName),' (Model ',num2str(iF),'/',num2str(numel(feederIDs)),')----'])
+    disp(['...saved to output\',char(modelName),'.mat...'])
     disp(' ');
-    toc
     
 end
-
-%% Save final results
 
 
 

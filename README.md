@@ -1,14 +1,20 @@
 # ConvertPrototypicalGLD
-Converts prototypical distribution feeders from [GridLAB-D](https://www.gridlabd.org/) .glm files to [MATLAB](https://www.mathworks.com/products/matlab.html) digraph objects. Digraph objects are generated for full and simplified representation.
+Converts prototypical distribution feeders from [GridLAB-D](https://www.gridlabd.org/) .glm files to [MATLAB](https://www.mathworks.com/products/matlab.html) digraph objects. Digraph objects are generated for full and simplified representation. Note: this has only been tested with prototypical feeder files. Other GridLAB-D files may include syntax, properties, or relationships not addressed by this code.
 
 ## Quick Start
-1. Clear \output folder
-2. [Download](https://github.com/gridlab-d/Taxonomy_Feeders) prototypical feeder .glm files. Add all 24 .glm files to the "\glm" folder.
+Output files provided in _\output_ and _\simple_ folders. Visualize simplified graphs with plotSimple.m.
 
+To generate files independently:
+1. Clear _\output_ and _\simple_ folders
+2. [Download](https://github.com/gridlab-d/Taxonomy_Feeders) prototypical feeder .glm files. Add all 24 .glm files to the _\glm_ folder.
+3. Run convertGLM to generate 24 files in "\output"
+4. Run simplifyAll to generate 24 files in "\simple"
 
-3. Run parseGLM(). This generates ### files in ###.
-4. Run ###. This generates ### files in ###.
-5. Visualize simplified models using ###.
+### Output Graphs
+Each .mat file in _\output_ includes string _modelName_ and digraph _G_.
+
+### Simple Graphs
+Each .mat file in _\simple_ includes string _modelName_ and digraph _G_.
 
 ## Overview of Prototypical Feeders
 This converts prototypical feeders described by Schneider, et al. in [Modern Grid Initiative Distribution Taxonomy Final Report](https://www.osti.gov/biblio/1040684-modern-grid-initiative-distribution-taxonomy-final-report) as part of work by Pacific Northwest National Laboratory (PNNL) on behalf of the Department of Energy.
@@ -61,9 +67,7 @@ An additional 35 characteristics were considered, including: feeder rating and p
 |GC-12.47-1	|12.47	|5200	|Single large commercial or industrial|
 
 ## File Access
-Prototypical feeders .glm files are available at https://sourceforge.net/p/gridlab-d/code/HEAD/tree/Taxonomy_Feeders/. Files downloaded on 19 September 2019 are included in the folder "\glm".
-
-These files 
+Prototypical feeders .glm files are available at https://github.com/gridlab-d/Taxonomy_Feeders. Code tested on files from commit 9c88d1a on Jan 6.
 
 # GridLAB-D Syntax and Data
 
@@ -72,17 +76,26 @@ These files
 Files are made available with node and edge lists for visualization in NodeXL. These files include relationships but do not include node or edge properties.
 
 ## Relevant Components and Properties
+**Names** for nodes and edges are provided for each .glm object. When edges are created to link a parent object with its child, the edge is named after the child with "parent-" as a prefix.
+
+
+
 Many feeders include normally open switches that provide the ability to transfer load from other feeders, and vice versa.
 
 Overhead and underground
+
+## 
+
+**Recorder** objects are not included in either digraph
 
 ## Not Relevant Components and Properties
 Feeder descriptions include the percent loading on the system. This reflects the connected load and the feeder ratings. This is not considered; all distribution feeders are treated as sufficient for all operating scenarios.
 
 Electrical characteristics, e.g. power quality, phase balancing, voltage regulation.
 
-Recorders
 
+
+**Meter** objects
 
 # Conversion Process and Details
 ## Translate .glm files to string arrays with parseGLM()
@@ -98,13 +111,5 @@ First, copy .glm files to
 
 - Download from github page, verify works, update link above
 
-## Process
-To repeat this analysis:
-1. Clear the folder "\results"
-2. Run parseGLM to convert each .glm into a string array
-3. Run convertGLM to convert string array into graph() objects
-...more to come...
 
-
-- Create quick start guide at top
-- This has only been tested with prototypical feeder files (from commit date 6 Jan 20). Other GridLAB-D files may include syntax, properties, or relationships not covered by this parseGLM().
+- 

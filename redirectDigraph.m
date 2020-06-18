@@ -7,14 +7,18 @@ function G = redirectDigraph(Gin,sourceID)
     % Output:
     %   G: digraph with same nodes and edges, edges flipped if needed
 
+    
     G = Gin;
     G.Edges.Checked = zeros(height(G.Edges),1);
     G.Nodes.Checked = zeros(height(G.Nodes),1);
     
+    disp(['...checking edge directions, starting from source ',...
+        G.Nodes.Name{sourceID},' (index ',num2str(sourceID),')...'])
+    
+    % initialize
     nodeIDs = sourceID; % start with input source
-        
-    loops = 0;
-    flipFlag = 0; % set as true if edge ever needed to be flipped
+    loops = 0;          % loop count to break while loop
+    allFlips = [];      % record all flips
     while ~isempty(nodeIDs) && loops < 1000
         loops = loops + 1;
         nextNodes = [];     % clear next interation of nodes
@@ -53,9 +57,7 @@ function G = redirectDigraph(Gin,sourceID)
             end
             % STEP 2: flip edges
             if ~isempty(flipList)
-                flipFlag = 1;
-                disp('Edges flipped:')
-                disp(num2str(flipList(:)));
+                allFlips = [allFlips,flipList]; % record with all other flips
                 G = flipedge(G,flipList);
             end
             
@@ -65,8 +67,12 @@ function G = redirectDigraph(Gin,sourceID)
         
     end
     
-    if ~flipFlag
-        disp('No edges needed to be flipped')
+    if isempty(allFlips)
+        disp('No edges were flipped')
+        disp(' ')
+    else
+        disp('The following edge indices were flipped:')
+        disp(allFlips');
     end
     
     if min(G.Edges.Checked(:)) == 0

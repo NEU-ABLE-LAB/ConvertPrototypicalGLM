@@ -67,7 +67,6 @@ function modelData = parseGLM(modelName)
     %end
 
     % display results for size validation
-    disp(['For model ',char(modelName)])
     disp(['  Total of ',num2str(length(glmStrArray)),' lines of data'])
     disp('  First two lines of data:')
     disp(['    ',char(glmStrArray(1))])
