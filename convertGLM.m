@@ -18,7 +18,8 @@ for iF = 1:length(feederIDs)
     modelData = parseGLM(modelName);    % create string array from .glm
     G = glm2net(modelName,modelData);   % convert to digraph
     
-    
+    allG{iF} = G;
+    toc
     
 end
 

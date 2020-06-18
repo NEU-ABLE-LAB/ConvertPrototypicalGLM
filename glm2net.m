@@ -213,7 +213,7 @@ function G = glm2net(modelName,glmStrArray)
     isolatedTable = (G.Nodes((outdegree(G)+indegree(G))==0,:));
     if ~isempty(isolatedTable)
         disp('**After processing, the following nodes are isolated and will be removed')
-        disp('  Verify they are all unused configuration objects');
+        disp('**Verify they are all unused configuration objects');
         disp(isolatedTable.Name(:));
         for name = isolatedTable.Name(:)
            G = rmnode(G,name); 
