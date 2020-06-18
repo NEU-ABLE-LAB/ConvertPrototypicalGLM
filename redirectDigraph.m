@@ -1,5 +1,11 @@
 function G = redirectDigraph(Gin,sourceID)
     % redirect all directed edges, with sourceID node as top of hierarchy
+    % displays update when edges are flipped
+    % Inputs:
+    %   Gin: digraph object; designed and verified for hierarchical form
+    %   sourceID: node index from which edges should originate
+    % Output:
+    %   G: digraph with same nodes and edges, edges flipped if needed
 
     G = Gin;
     G.Edges.Checked = zeros(height(G.Edges),1);
