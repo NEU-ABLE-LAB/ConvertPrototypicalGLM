@@ -3,7 +3,7 @@ Converts prototypical distribution feeders from [GridLAB-D](https://www.gridlabd
 
 ## Quick Start
 1. [Download](https://github.com/gridlab-d/Taxonomy_Feeders) prototypical feeder .glm files. Add all 24 .glm files to the "\glm" folder.
-2. Run ###. This generates ### files in ###.
+2. Run parseGLM(). This generates ### files in ###.
 3. Run ###. This generates ### files in ###.
 4. Visualize simplified models using ###.
 
@@ -78,6 +78,10 @@ Feeder descriptions include the percent loading on the system. This reflects the
 
 Electrical characteristics, e.g. power quality, phase balancing, voltage regulation.
 
+# Conversion Process and Details
+## Translate .glm files to string arrays with parseGLM()
+First, copy .glm files to 
+
 ## OPEN QUESTIONS
 - Are switches considered fused? Doesn't look like it.
 - Impact of reclosers
@@ -94,4 +98,4 @@ To repeat this analysis:
 
 
 - Create quick start guide at top
-- This has only been tested with prototypical feeder files (from commit date 6 Jan 20). Other GridLAB-D files may include syntax, properties, or relationships not covered by this glm2net().
+- This has only been tested with prototypical feeder files (from commit date 6 Jan 20). Other GridLAB-D files may include syntax, properties, or relationships not covered by this parseGLM().
