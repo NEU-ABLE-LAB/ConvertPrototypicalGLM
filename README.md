@@ -67,13 +67,11 @@ An additional 35 characteristics were considered, including: feeder rating and p
 |GC-12.47-1	|12.47	|5200	|Single large commercial or industrial|
 
 ## File Access
-Prototypical feeders .glm files are available at https://github.com/gridlab-d/Taxonomy_Feeders. Code tested on files from commit 9c88d1a on Jan 6.
+Prototypical feeders .glm files are available at https://github.com/gridlab-d/Taxonomy_Feeders. Code tested on files from commit 9c88d1a on Jan 6. Available files include node and edge lists for visualization in NodeXL, but without any node or edge properties.
 
 # GridLAB-D Syntax and Data
 
-# Conversion Goals
 
-Files are made available with node and edge lists for visualization in NodeXL. These files include relationships but do not include node or edge properties.
 
 ## Relevant Components and Properties
 **Names** for nodes and edges are provided for each .glm object. When edges are created to link a parent object with its child, the edge is named after the child with "parent-" as a prefix.

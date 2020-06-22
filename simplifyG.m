@@ -1,63 +1,36 @@
 function G = simplifyG(Gin)
+    % simplify digraph representation of .glm distribution system
+    %   Nodes with fields: Name (cell), Type (string), Prop (Struct)
+    %   Edges with fields: EndNodes, Name (string), Type (string), Prop (Struct)
+    %   Note: designed and tested specifically for PNNL prototypical feeders
+    % input Gin: digraph output form convertGLM / glm2net
+    % output G: digraph with following modifications:
+    %   
 
-    % take the results from convertGLM / glm2net and simplify
     %% TO DO:
-    % - convert to function
-    % - consider: display as "layered" for hierarchy & impact of length on plotting
-    % - create "simple" version
-    % - check and document properties retained
-    % - REMOVE nodes between only 2 others (add WHILE LOOP)
-    %   - choose when to inherit properties (name/length) of edges
+    % - check all property choices
     % remove troubleshoot plots
 
-    %% Notes and formatting:
-    % Nodes.Name is cell array of char, otherwise text fields are string arrays
-    %clear
-    %modelName = 'R1-12.47-3';
-
-    %% LOAD
-
-    %addpath([pwd,'\results\'])
-    % test case
-    %load([modelName,'.mat'])
-    
     G = Gin;
-
-    %% 1. RENAME NODES AND EDGES
-    %{
-    G0 = G; % troubleshooting savepoint
-    % remove model name from node (edge table automatically updated) and edge names
-    % replace "_" with "-" to make plotting cleaner
-    removeStr = strcat(replace(modelName,".","-"),'_');
-    % loop through nodes
-    for iN = 1:height(G.Nodes)
-        % rename (note: Name must be cell array)
-        initName = G.Nodes.Name{iN};
-        newName = erase(initName,removeStr);
-        newName = replace(newName,"_","-");
-        G.Nodes.Name{iN} = newName;
-    end
-    % loop through edges (note: edge Names do not need to be unique)
-    for iE = 1:height(G.Edges)
-        initName = G.Edges.Name{iE};
-        newName = erase(initName,removeStr);
-        newName = replace(newName,"_","-");
-        G.Edges.Name{iE} = newName;
-    end
-    %}
-    % TROUBLESHOOT: plot
-    %figure(1)
-    %plot(G,'Layout','layered','NodeLabel',G.Nodes.Name,'EdgeLabel',G.Edges.Name);
 
     %% 2. NODES: Extract and clean up properties
     G1 = G; % troubleshooting savepoint
     % Keep properties: Name, Type
     % New properties: NominalPower
 
+    removeList = []; % track nodes to be removed
+    
     for iN = 1:height(G.Nodes)
         props = G.Nodes.Prop{iN};
         % check node type
         switch lower(G.Nodes.Type(iN))
+            case 'capacitor'
+                % remove capacitors
+                if isempty(outedges(G,iN))
+                    removeList(end+1) = iN;
+                else
+                    warning('Capacitor node should not have outedges');
+                end
             case 'load'
                 % update NominalPower
                 powerNom = 0;
@@ -70,45 +43,31 @@ function G = simplifyG(Gin)
                 if isfield(props,'constant_power_C')
                     powerNom = powerNom + str2num(props.constant_power_C);
                 end
-                G.Nodes.NominalPower(iN) = real(powerNom);
+                G.Nodes.NominalPower(iN) = abs(powerNom);
+            case 'meter'
             case 'node'
-                % check for type and ID source node
-                %{
-                if isfield(props,'bustype')
-                    disp(['bustype for ',char(G.Nodes.Name(iN)),' (id ',num2str(iN),'); set as source']);
-                    if strcmpi(props.bustype,'SWING')
-                        % swing bus is infinite bus (i.e. source)
-                        G.Nodes.Type(iN) = 'source';
-                    else
-                        warning('Unexpected node bustype (not "SWING")');
-                    end
-                end
-                %}
-                G.Nodes.NominalPower(iN) = 0;
+            case 'source'
+            case 'triplex_meter'
             case 'triplex_node'
-                % update NominalPower
-                powerNom = 0;
                 if isfield(props,'power_12')
-                    powerNom = str2num(props.power_12);
+                    % with load property, assign to load type
+                    G.Nodes.Type(iN) = 'load';
+                    powerNom = abs(str2num(props.power_12));
+                else
+                    % else assign to node type
+                    G.Nodes.Type(iN) = 'node';
                 end
-                G.Nodes.NominalPower(iN) = real(powerNom);
             case {'capacitor','meter','triplex_meter'}
-                % nothing for these types
-                G.Nodes.NominalPower(iN) = 0;
             otherwise
                 error('Node type missing in switch loop')
         end
     end
 
+    G = rmnode(G,removeList); % remove undesired nodes
+    
     % remove unused properties
-    G.Nodes.glmName = [];
-    G.Nodes.ID = [];
-    G.Nodes.Line = [];
     G.Nodes.Prop = [];
-    G.Nodes.DegreeIn = [];
-    G.Nodes.DegreeOut = [];
-    G.Nodes.DegreeSum = [];
-
+    
     % TROUBLESHOOT: plot
     %figure(2)
     %plot(G,'Layout','layered','NodeLabel',G.Nodes.Name,'EdgeLabel',G.Edges.Name);
@@ -157,9 +116,6 @@ function G = simplifyG(Gin)
     end
 
     % remove unused properties
-    G.Edges.glmName = [];
-    G.Edges.ID = [];
-    G.Edges.Line = [];
     G.Edges.Prop = [];
     % add new edges
     for i = 1:numel(edgeAddS)
@@ -177,27 +133,13 @@ function G = simplifyG(Gin)
     %figure(3)
     %plot(G,'Layout','layered','NodeLabel',G.Nodes.Name,'EdgeLabel',G.Edges.Name);
 
-    %% 4. IDENTIFY SOURCE NODE and adjust directed edges
-    %{
-    sourceID = find(G.Nodes.Type == 'source');
-    if isempty(sourceID)
-        error('no source node found')
-    elseif numel(sourceID)>1
-        error('multiple source nodes found')
-    end
-    G = redirectDigraph(G,sourceID);
-
-    % TROUBLESHOOT: plot
-    figure(4)
-    plot(G,'Layout','layered','NodeLabel',G.Nodes.Name,'EdgeLabel',G.Edges.Name);
-    %}
     %% 5. REMOVE INLINE NODES AND MERGE EDGES
     G4 = G; % troubleshooting savepoint
     G.Edges.MergeLog(:) = ""; % property to record names
     % searching for inline node, merge, search again, until none remain
     flagSearch = 1;
     loops1 = 0;
-    while flagSearch && loops1 < 10000
+    while flagSearch && loops1 < 1000
         iN = 0; % candidate node
         loops1 = loops1 + 1;
         flagFound = 0; % flag for inline discovered
@@ -263,8 +205,34 @@ function G = simplifyG(Gin)
     %figure(5)
     %plot(G,'Layout','layered','NodeLabel',G.Nodes.Name,'EdgeLabel',G.Edges.Name);
 
-    %% 6. REMOVE TERMINAL NODES THAT ARE NOT LOADS
+    %% 6. REMOVE TERMINAL NODES THAT ARE NOT LOADS OR SWITCHES
     G5 = G; % troubleshooting savepoint
+    
+    loopFlag = 1;
+    while loopFlag
+        terminalMask = [outdegree(G)==0];
+        terminalTypes = unique(G.Nodes.Type(terminalMask));
+        if sum(strcmpi(terminalTypes,"load"))+sum(strcmpi(terminalTypes,"switch")) == numel(terminalTypes)
+            % all terminal nodes either load or switch; break loop
+            loopFlag = 0;
+        else
+            % else remove other node types
+            for iType = 1:numel(terminalTypes)
+                if ~max(strcmpi(terminalTypes(iType),{'load','switch'}))
+                    % if not load or switch type, remove those nodes
+                   removeIDs = find([outdegree(G)==0].*strcmpi(G.Nodes.Type,terminalTypes(iType)));
+                   disp('Removing the following terminal nodes:')
+                   disp(G.Nodes.Name(removeIDs))
+                   G = rmnode(G,removeIDs);
+                end
+                
+            end
+            
+        end
+    end
+    
+    
+    %{
     G.Nodes.MergeLog(:) = ""; % property to record names
     % searching for terminal node, merge, search again, until none remain
     flagSearch = 1;
@@ -293,21 +261,21 @@ function G = simplifyG(Gin)
             flagSearch = 0;
         end
     end
-
+    %}
+    
+    
     % TROUBLESHOOT: list terminal node types
-    disp('--Terminal Node Types--');
-    for iN = 1:height(G.Nodes)
-       if isempty(outedges(G,iN))
-           disp(G.Nodes.Type(iN));
-       end
+    terminalMask = [outdegree(G)==0];
+    terminalTypes = unique(G.Nodes.Type(terminalMask));
+    disp('--Terminal Node Types and Counts--');
+    for iType = 1:numel(terminalTypes)
+        type = terminalTypes(iType);
+        count = sum(strcmpi(type,G.Nodes.Type(terminalMask)));
+        disp(['  ',char(type),': ',num2str(count)])
     end
-
+    
     % TROUBLESHOOT: plot
     %figure(6)
     %plot(G,'Layout','layered','NodeLabel',G.Nodes.Name,'EdgeLabel',G.Edges.Name);
-
-    %% SAVE
-    % (In new folder)
-    %save([pwd,'\output\',char(modelName),'.mat'],'G','modelName')
 
 end

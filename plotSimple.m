@@ -1,5 +1,9 @@
-function plotSimple(modelName,G,labelFlag)
+function plotSimple(modelName,G,labelFlag,figNum)
     % plot simplified graph
+    
+    %% TO DO
+    % - consider: display as "layered" for hierarchy & impact of length on plotting
+    
 
     %% LOAD
     %modelName = 'R1-12.47-3';
@@ -10,7 +14,7 @@ function plotSimple(modelName,G,labelFlag)
 
     %G.Edges.Weight = G.Edges.Length;
 
-    hFig = figure(10);
+    hFig = figure(figNum);
     clf
     hold on
 
@@ -32,85 +36,92 @@ function plotSimple(modelName,G,labelFlag)
     y = 2*ylims(2);
 
     % set node highlights
-    highlight(hPlot,find(G.Nodes.Type=='fuse'),...
-        'NodeColor',[1 0 1],'Marker','square','MarkerSize',3);
-    hS(1) = scatter(x,y,4,[1 0 1],'filled','s','DisplayName','Fuse');
-
-    highlight(hPlot,find(G.Nodes.Type=='load'),...
+    
+    highlight(hPlot,find(G.Nodes.Type=={'load'}),...
         'NodeColor',[0.6350 0.0780 0.1840],'Marker','square','MarkerSize',4);
-    hS(2) = scatter(x,y,8,[0.6350 0.0780 0.1840],'filled','s','DisplayName','Load');
-
+    hLoad = scatter(x,y,8,[0.6350 0.0780 0.1840],'filled','s','DisplayName','Load');
+    
     highlight(hPlot,find(G.Nodes.Type=='node'),...
         'NodeColor',[0 0 0],'Marker','o','MarkerSize',2);
-    hS(3) = scatter(x,y,2,[0 0 0],'filled','o','DisplayName','Node');
+    hNode = scatter(x,y,2,[0 0 0],'filled','o','DisplayName','Node');
 
+    highlight(hPlot,find(G.Nodes.Type=='fuse'),...
+        'NodeColor',[1 0 1],'Marker','square','MarkerSize',3);
+    hFuse = scatter(x,y,4,[1 0 1],'filled','s','DisplayName','Fuse');
+    
     highlight(hPlot,find(G.Nodes.Type=='recloser'),...
         'NodeColor',[1 0 1],'Marker','s');
-    hS(4) = scatter(x,y,4,[1 0 1],'filled','s','DisplayName','Recloser');
+    hRecloser = scatter(x,y,4,[1 0 1],'filled','s','DisplayName','Recloser');
 
     highlight(hPlot,find(G.Nodes.Type=='regulator'),...
         'NodeColor',[1 0 1],'Marker','square','MarkerSize',3);
-    hS(5) = scatter(x,y,4,[1 0 1],'filled','s','DisplayName','Regulator');
+    hRegulator = scatter(x,y,4,[1 0 1],'filled','s','DisplayName','Regulator');
+    
+    
 
     highlight(hPlot,find(G.Nodes.Type=='source'),...
         'NodeColor',[0.9290 0.6940 0.1250],'Marker','square','MarkerSize',5);
-    hS(6) = scatter(x,y,10,[0.9290 0.6940 0.1250],'filled','s','DisplayName','Source');
+    hSource = scatter(x,y,10,[0.9290 0.6940 0.1250],'filled','s','DisplayName','Source');
 
     highlight(hPlot,find(G.Nodes.Type=='switch'),...
         'NodeColor',[0.4940 0.1840 0.5560],'Marker','o','MarkerSize',3);
-    hS(7) = scatter(x,y,4,[0.4940 0.1840 0.5560],'filled','o','DisplayName','Switch');
+    hSwitch = scatter(x,y,4,[0.4940 0.1840 0.5560],'filled','o','DisplayName','Switch');
 
     highlight(hPlot,find(G.Nodes.Type=='transformer'),...
         'NodeColor',[0 0 0],'Marker','^','MarkerSize',3);
-    hS(8) = scatter(x,y,5,[0 0 0],'filled','^','DisplayName','Transformer');
+    hTransformer = scatter(x,y,5,[0 0 0],'filled','^','DisplayName','Transformer');
 
-    highlight(hPlot,find(G.Nodes.Type=='triplex_node'),...
-        'NodeColor',[0.4660 0.6740 0.1880],'Marker','o','MarkerSize',4);
-    hS(9) = scatter(x,y,8,[0.4660 0.6740 0.1880],'filled','o','DisplayName','Triplex Node');
+
 
     % set edge highlights
     eIDs = find(G.Edges.Type=='overhead_line');
     highlight(hPlot,G.Edges.EndNodes(eIDs,1),G.Edges.EndNodes(eIDs,2),...
         'EdgeColor',[0 0 0],'LineStyle','-','LineWidth',1.5,'ArrowSize',0);
-    hL(1) = plot(x,y,'Color',[0 0 0],'LineStyle','-','LineWidth',2,'DisplayName','Overhead Line');
+    hOverhead = plot(x,y,'Color',[0 0 0],'LineStyle','-','LineWidth',2,'DisplayName','Overhead Line');
 
     eIDs = find(G.Edges.Type=='underground_line');
     highlight(hPlot,G.Edges.EndNodes(eIDs,1),G.Edges.EndNodes(eIDs,2),...
         'EdgeColor',[0 0 0],'LineStyle',':','LineWidth',1.5,'ArrowSize',0);
-    hL(2) = plot(x,y,'Color',[0 0 0],'LineStyle',':','LineWidth',2,'DisplayName','Underground Line');
+    hUnderground = plot(x,y,'Color',[0 0 0],'LineStyle',':','LineWidth',2,'DisplayName','Underground Line');
 
     eIDs = find(G.Edges.Type=='triplex_line');
     highlight(hPlot,G.Edges.EndNodes(eIDs,1),G.Edges.EndNodes(eIDs,2),...
         'EdgeColor',[0.4660 0.6740 0.1880],'LineStyle','-.','LineWidth',1.5,'ArrowSize',0);
-    hL(3) = plot(x,y,'Color',[0.4660 0.6740 0.1880],'LineStyle','-.','LineWidth',2,'DisplayName','Triplex Line');
+    hTriplex = plot(x,y,'Color',[0.4660 0.6740 0.1880],'LineStyle','-.','LineWidth',2,'DisplayName','Triplex Line');
 
     eIDs = find(G.Edges.Type=='');
     highlight(hPlot,G.Edges.EndNodes(eIDs,1),G.Edges.EndNodes(eIDs,2),...
-        'EdgeColor',[0 0.4470 0.7410],'LineStyle','-','LineWidth',1.5,'ArrowSize',0);
-    hL(4) = plot(x,y,'Color',[0 0.4470 0.7410],'LineStyle','-','LineWidth',2,'DisplayName','Direct Connection');
+        'EdgeColor',[0.5 0.5 0.5],'LineStyle','-','LineWidth',1.5,'ArrowSize',0);
+    hDirect = plot(x,y,'Color',[0.5 0.5 0.5],'LineStyle','-','LineWidth',2,'DisplayName','Direct Connection');
 
     % restore plot boundary
     xlim(xlims);
     ylim(ylims);
-    % add legend
-    hLegend = legend([hS,hL]);
+    % add legend (in order selected, don't include nodes)
+    hLegend = legend([hSource,hLoad,...
+                    hSwitch,hFuse,hRecloser,hRegulator,...
+                    hDirect,hTransformer,hOverhead,hUnderground,hTriplex]);
     set(hLegend         , ...
-        'numColumns'    , 2     );
-    % label selected nodes and edges
-    nodeLabels = string(G.Nodes.Name);
-    nodeLabels(G.Nodes.Type=='node') = '';
+        'Location'      , 'best'     , ...
+        'numColumns'    , 4     );
+    % only label if flag set
     if labelFlag
-        % only label if flag set
+        nodeLabels = string(G.Nodes.Name);
+        nodeLabels(G.Nodes.Type=='node') = '';
         set(hPlot, ...
             'NodeLabel'     , nodeLabels      , ...
             'EdgeLabel'     , G.Edges.Name      );
+    else
+        set(hPlot, ...
+            'NodeLabel'     , []      , ...
+            'EdgeLabel'     , []      );
     end
     % general plot style
     set(gca         , ...
         'box'       , 'on'     , ...
         'XTick'     , []        , ...
         'YTick'     , []        );
-    hTitle = title(modelName);
+    hTitle = title([char(modelName),' (simplified)']);
 
 
 
